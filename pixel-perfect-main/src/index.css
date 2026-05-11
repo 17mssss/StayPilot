@@ -1,0 +1,122 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 220 13% 26%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 13% 26%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 13% 26%;
+
+    --primary: 22 98% 52%;
+    --primary-foreground: 0 0% 100%;
+
+    --primary-medium: 24 100% 56%;
+    --primary-light: 30 100% 95%;
+
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 220 13% 26%;
+
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+
+    --accent: 30 100% 96%;
+    --accent-foreground: 220 13% 26%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 71% 45%;
+    --success-light: 138 76% 94%;
+    --error-light: 0 93% 97%;
+
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 21 90% 48%;
+
+    --radius: 0.75rem;
+    --radius-lg: 0.75rem;
+    --radius-btn: 0.5rem;
+
+    --surface-alt: 210 20% 98%;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  /* ── Dark mode (soir/nuit — appliqué par JS selon l'heure) ──────────────── */
+  .dark {
+    --background: 220 15% 7%;
+    --foreground: 0 0% 93%;
+
+    --card: 220 13% 11%;
+    --card-foreground: 0 0% 93%;
+
+    --popover: 220 13% 11%;
+    --popover-foreground: 0 0% 93%;
+
+    --primary: 24 100% 57%;
+    --primary-foreground: 0 0% 100%;
+
+    --primary-medium: 24 100% 62%;
+    --primary-light: 24 80% 14%;
+
+    --secondary: 220 13% 15%;
+    --secondary-foreground: 0 0% 93%;
+
+    --muted: 220 13% 15%;
+    --muted-foreground: 220 9% 60%;
+
+    --accent: 24 80% 12%;
+    --accent-foreground: 0 0% 93%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 71% 45%;
+    --success-light: 138 76% 12%;
+    --error-light: 0 60% 15%;
+
+    --border: 220 13% 19%;
+    --input: 220 13% 19%;
+    --ring: 24 100% 57%;
+
+    --surface-alt: 220 13% 10%;
+
+    --sidebar-background: 220 13% 9%;
+    --sidebar-foreground: 0 0% 80%;
+    --sidebar-primary: 24 100% 57%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 13% 15%;
+    --sidebar-accent-foreground: 0 0% 93%;
+    --sidebar-border: 220 13% 19%;
+    --sidebar-ring: 24 100% 57%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading font-bold tracking-tight text-foreground;
+  }
+}

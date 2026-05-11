@@ -1,0 +1,76 @@
+{
+  "name": "StayPilot — Workflow 2 : Scheduler Messages",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "hours", "hoursInterval": 1 }]
+        }
+      },
+      "name": "Cron 1h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://{{ $env.BACKEND_URL }}/api/internal/scheduler/run",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": { "timeout": 30000 }
+      },
+      "name": "Déclencher scheduler backend",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [320, 300],
+      "credentials": {
+        "httpHeaderAuth": { "name": "BackendInternalKey" }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.envoyes }}",
+              "operation": "largerEqual",
+              "value2": 1
+            }
+          ]
+        }
+      },
+      "name": "IF — messages envoyés",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [540, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "console.log('[n8n] Messages envoyés:', $input.first().json.envoyes);\nreturn $input.all();"
+      },
+      "name": "Log résultat",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [760, 200]
+    }
+  ],
+  "connections": {
+    "Cron 1h": {
+      "main": [[{ "node": "Déclencher scheduler backend", "type": "main", "index": 0 }]]
+    },
+    "Déclencher scheduler backend": {
+      "main": [[{ "node": "IF — messages envoyés", "type": "main", "index": 0 }]]
+    },
+    "IF — messages envoyés": {
+      "main": [
+        [{ "node": "Log résultat", "type": "main", "index": 0 }],
+        []
+      ]
+    }
+  },
+  "settings": {
+    "saveDataSuccessExecution": "lastNode",
+    "saveManualExecutions": true
+  }
+}

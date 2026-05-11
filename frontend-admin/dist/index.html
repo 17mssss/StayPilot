@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <script>
+      (function() {
+        var saved = localStorage.getItem('theme-admin');
+        var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (saved === 'dark' || (!saved && prefersDark)) {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>StayPilot Admin</title>
+    <script type="module" crossorigin src="/assets/index-CA7IRERq.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-D1w8L0hp.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

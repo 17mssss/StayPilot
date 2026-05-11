@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="520" height="130" viewBox="0 0 520 130">
+  <defs>
+    <linearGradient id="circleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1A56A0"/>
+      <stop offset="100%" style="stop-color:#0F3460"/>
+    </linearGradient>
+    <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#0F3460"/>
+      <stop offset="100%" style="stop-color:#1A56A0"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#1A56A0" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <!-- ── ICONE : cercle gradient ── -->
+  <circle cx="65" cy="65" r="60" fill="url(#circleGrad)" filter="url(#shadow)"/>
+
+  <!-- ── MAISON (blanche, centrée) ── -->
+  <!-- Toit -->
+  <polygon points="65,22 30,50 100,50" fill="none" stroke="white" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
+  <!-- Corps -->
+  <rect x="35" y="50" width="60" height="42" rx="2" fill="none" stroke="white" stroke-width="3.5"/>
+  <!-- Porte -->
+  <rect x="53" y="66" width="24" height="26" rx="3" fill="white"/>
+
+  <!-- ── TRAJECTOIRE D'AVION (arc doré au-dessus) ── -->
+  <path d="M18,38 Q65,8 112,38" fill="none" stroke="#FFD700" stroke-width="2.8" stroke-linecap="round" stroke-dasharray="0"/>
+
+  <!-- ── AVION (petit triangle stylisé en bout de trajectoire) ── -->
+  <g transform="translate(108,33) rotate(30)">
+    <!-- Corps avion -->
+    <ellipse cx="0" cy="0" rx="7" ry="3.5" fill="#FFD700"/>
+    <!-- Aile gauche -->
+    <polygon points="-3,-3 -10,-9 2,-3" fill="#FFD700"/>
+    <!-- Queue -->
+    <polygon points="7,0 12,-4 12,1" fill="#FFD700"/>
+  </g>
+
+  <!-- ── TEXTE PRINCIPAL ── -->
+  <!-- "Stay" — gras, bleu foncé -->
+  <text x="148" y="72" font-family="Arial, sans-serif" font-size="54" font-weight="800" fill="url(#textGrad)" letter-spacing="-1">Stay</text>
+  <!-- "Pilot" — poids léger, bleu moyen -->
+  <text x="293" y="72" font-family="Arial, sans-serif" font-size="54" font-weight="300" fill="#1A56A0" letter-spacing="-1">Pilot</text>
+
+  <!-- Point doré entre les deux mots -->
+  <circle cx="289" cy="72" r="0" fill="#FFD700"/>
+
+  <!-- ── TAGLINE ── -->
+  <text x="149" y="98" font-family="Arial, sans-serif" font-size="16" font-weight="400" fill="#6B7280" letter-spacing="2">VOTRE CONCIERGERIE EN PILOTE AUTOMATIQUE</text>
+
+  <!-- ── LIGNE DÉCORATIVE DORÉE sous le texte principal ── -->
+  <rect x="148" y="80" width="350" height="2.5" rx="1.5" fill="#FFD700" opacity="0.7"/>
+</svg>

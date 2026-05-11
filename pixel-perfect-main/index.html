@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Dark mode appliqué AVANT le premier rendu React pour éviter le flash blanc -->
+    <script>
+      (function() {
+        var h = new Date().getHours();
+        if (h >= 20 || h < 7) document.documentElement.classList.add('dark');
+      })();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>StayPilot — Votre conciergerie Airbnb en pilote automatique</title>
+    <meta name="description" content="StayPilot automatise 90% des opérations de votre conciergerie Airbnb : synchronisation, chatbot 24/7, facturation, Owner App." />
+    <meta name="author" content="StayPilot" />
+    <meta property="og:title" content="StayPilot — Conciergerie Airbnb en pilote automatique" />
+    <meta property="og:description" content="Synchronisation, chatbot 24/7, facturation automatique, Owner App. Demandez une démo gratuite." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

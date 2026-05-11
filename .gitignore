@@ -1,0 +1,8 @@
+.env
+certs/
+logs/
+node_modules/
+backend/node_modules/
+pixel-perfect-main/node_modules/
+pixel-perfect-main/dist/
+*.local

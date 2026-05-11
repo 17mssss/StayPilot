@@ -1,0 +1,111 @@
+version: '3.8'
+
+services:
+  # ── Backend Node.js ────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
+      - TWILIO_PHONE_NUMBER=${TWILIO_PHONE_NUMBER}
+      - TWILIO_PHONE_WHATSAPP=${TWILIO_PHONE_WHATSAPP}
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
+      - SENDGRID_FROM_EMAIL=${SENDGRID_FROM_EMAIL}
+      - SENDGRID_FROM_NAME=${SENDGRID_FROM_NAME}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_S3_BUCKET=${AWS_S3_BUCKET}
+      - AWS_REGION=${AWS_REGION}
+      - CLIENT_NAME=${CLIENT_NAME}
+      - CLIENT_LOGO_URL=${CLIENT_LOGO_URL}
+      - CLIENT_PHONE=${CLIENT_PHONE}
+      - CLIENT_ADDRESS=${CLIENT_ADDRESS}
+      - CLIENT_SIRET=${CLIENT_SIRET}
+      - CLIENT_COMMISSION_RATE=${CLIENT_COMMISSION_RATE}
+      - SUPERHOTE_API_KEY=${SUPERHOTE_API_KEY}
+      - SUPERHOTE_API_URL=${SUPERHOTE_API_URL:-https://app.superhote.com/api}
+      - FRONTEND_ADMIN_URL=https://${DOMAIN}
+      - FRONTEND_OWNER_URL=https://${DOMAIN}
+      - ENABLE_POLLING=true
+      - ENABLE_SCHEDULER=true
+    networks:
+      - staypilot_net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── n8n — Workflows d'automatisation ──────────────────────────────────────
+  n8n:
+    image: n8nio/n8n:latest
+    restart: always
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=${DOMAIN}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=https
+      - WEBHOOK_URL=https://${DOMAIN}
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=${N8N_USER}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD}
+      - GENERIC_TIMEZONE=Europe/Paris
+      - TZ=Europe/Paris
+      # Variables disponibles dans les workflows n8n
+      - BACKEND_URL=http://backend:3001
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - staypilot_net
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:5678/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Nginx — Reverse proxy HTTPS ────────────────────────────────────────────
+  nginx:
+    image: nginx:alpine
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+      - ./logs/nginx:/var/log/nginx
+      - ./frontend-admin/dist:/usr/share/nginx/html/admin:ro
+      - ./frontend-owner/dist:/usr/share/nginx/html/owner:ro
+    networks:
+      - staypilot_net
+    depends_on:
+      - backend
+      - n8n
+
+volumes:
+  n8n_data:
+    driver: local
+
+networks:
+  staypilot_net:
+    driver: bridge

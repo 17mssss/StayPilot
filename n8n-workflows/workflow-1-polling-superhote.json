@@ -1,0 +1,111 @@
+{
+  "name": "StayPilot — Workflow 1 : Polling Superhote",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "minutes", "minutesInterval": 15 }]
+        }
+      },
+      "name": "Cron 15min",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://app.superhote.com/api/reservations",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 10000
+        },
+        "queryParameters": {
+          "parameters": [
+            { "name": "date_from", "value": "={{ $now.minus({days: 1}).format('yyyy-MM-dd') }}" },
+            { "name": "date_to", "value": "={{ $now.plus({months: 6}).format('yyyy-MM-dd') }}" }
+          ]
+        }
+      },
+      "name": "GET Réservations Superhote",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [320, 300],
+      "credentials": {
+        "httpHeaderAuth": { "name": "SuperhoteApiKey" }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normaliser les réservations selon le format Superhote\nconst data = $input.first().json;\nconst reservations = data.reservations ?? data ?? [];\n\nreturn reservations.map(resa => ({\n  json: {\n    superhote_id: String(resa.id || resa.reservation_id),\n    voyageur_nom: resa.guest_name || resa.voyageur_nom || 'Voyageur',\n    voyageur_email: resa.guest_email || null,\n    voyageur_telephone: resa.guest_phone || null,\n    checkin: resa.check_in || resa.checkin,\n    checkout: resa.check_out || resa.checkout,\n  }\n}));"
+      },
+      "name": "Normaliser données",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [540, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.superhote_id }}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "name": "IF — données valides",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [760, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://{{ $env.BACKEND_URL }}/webhook/superhote",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "superhote_id", "value": "={{ $json.superhote_id }}" },
+            { "name": "voyageur_nom", "value": "={{ $json.voyageur_nom }}" },
+            { "name": "voyageur_email", "value": "={{ $json.voyageur_email }}" },
+            { "name": "voyageur_telephone", "value": "={{ $json.voyageur_telephone }}" },
+            { "name": "checkin", "value": "={{ $json.checkin }}" },
+            { "name": "checkout", "value": "={{ $json.checkout }}" },
+            { "name": "logement_id", "value": "={{ $env.LOGEMENT_ID }}" }
+          ]
+        },
+        "options": { "timeout": 15000 }
+      },
+      "name": "POST → Backend /webhook/superhote",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [980, 200]
+    }
+  ],
+  "connections": {
+    "Cron 15min": {
+      "main": [[{ "node": "GET Réservations Superhote", "type": "main", "index": 0 }]]
+    },
+    "GET Réservations Superhote": {
+      "main": [[{ "node": "Normaliser données", "type": "main", "index": 0 }]]
+    },
+    "Normaliser données": {
+      "main": [[{ "node": "IF — données valides", "type": "main", "index": 0 }]]
+    },
+    "IF — données valides": {
+      "main": [
+        [{ "node": "POST → Backend /webhook/superhote", "type": "main", "index": 0 }],
+        []
+      ]
+    }
+  },
+  "settings": {
+    "errorWorkflow": "",
+    "saveDataSuccessExecution": "lastNode",
+    "saveManualExecutions": true,
+    "executionTimeout": 120
+  }
+}

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <circle cx="100" cy="100" r="100" fill="white"/>
+  <!-- Vêtement marron -->
+  <ellipse cx="100" cy="195" rx="70" ry="44" fill="#8B5E3C"/>
+  <path d="M74,162 L100,176 L100,195 L64,195 L64,170 Z" fill="#6B4428"/>
+  <path d="M126,162 L100,176 L100,195 L136,195 L136,170 Z" fill="#6B4428"/>
+  <path d="M100,163 L108,176 L100,195 L92,176 Z" fill="#F0EDE8"/>
+  <!-- Cou -->
+  <rect x="88" y="138" width="24" height="26" rx="6" fill="#D4956A"/>
+  <!-- Tête -->
+  <ellipse cx="100" cy="110" rx="39" ry="43" fill="#D4956A"/>
+  <!-- Oreilles -->
+  <ellipse cx="61" cy="112" rx="6" ry="8" fill="#D4956A"/>
+  <ellipse cx="139" cy="112" rx="6" ry="8" fill="#D4956A"/>
+  <!-- Cheveux châtain court -->
+  <ellipse cx="100" cy="74" rx="39" ry="18" fill="#B07840"/>
+  <path d="M61,92 Q61,70 100,66 Q139,70 139,92" fill="#B07840"/>
+</svg>

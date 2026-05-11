@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <circle cx="100" cy="100" r="100" fill="white"/>
+  <!-- Costume gris -->
+  <ellipse cx="100" cy="195" rx="70" ry="44" fill="#5A6478"/>
+  <path d="M74,160 L100,175 L100,195 L64,195 L64,168 Z" fill="#444E62"/>
+  <path d="M126,160 L100,175 L100,195 L136,195 L136,168 Z" fill="#444E62"/>
+  <path d="M100,162 L108,175 L100,195 L92,175 Z" fill="#F0EDE8"/>
+  <!-- Cou -->
+  <rect x="88" y="138" width="24" height="26" rx="6" fill="#C87850"/>
+  <!-- Tête -->
+  <ellipse cx="100" cy="110" rx="38" ry="43" fill="#C87850"/>
+  <!-- Oreilles -->
+  <ellipse cx="62" cy="112" rx="6" ry="8" fill="#C87850"/>
+  <ellipse cx="138" cy="112" rx="6" ry="8" fill="#C87850"/>
+  <!-- Cheveux noirs courts structurés -->
+  <ellipse cx="100" cy="73" rx="38" ry="17" fill="#1A1020"/>
+  <path d="M62,90 Q62,68 100,64 Q138,68 138,90" fill="#1A1020"/>
+  <!-- Côté structuré -->
+  <path d="M62,88 Q68,72 100,68 Q100,68 100,80 Q80,80 62,88 Z" fill="#1A1020"/>
+</svg>

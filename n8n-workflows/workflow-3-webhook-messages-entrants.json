@@ -1,0 +1,97 @@
+{
+  "name": "StayPilot — Workflow 3 : Messages Entrants (Webhook)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "message-entrant",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook — Message entrant",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [100, 300],
+      "webhookId": "staypilot-message-entrant"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body.reservation_id }}",
+              "operation": "isNotEmpty"
+            },
+            {
+              "value1": "={{ $json.body.contenu }}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "name": "IF — payload valide",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [320, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://{{ $env.BACKEND_URL }}/webhook/message-entrant",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "reservation_id", "value": "={{ $json.body.reservation_id }}" },
+            { "name": "canal", "value": "={{ $json.body.canal ?? 'sms' }}" },
+            { "name": "contenu", "value": "={{ $json.body.contenu }}" },
+            { "name": "from", "value": "={{ $json.body.from }}" }
+          ]
+        },
+        "options": { "timeout": 30000 }
+      },
+      "name": "POST → Backend traitement",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [540, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"success\": true, \"action\": $json.action }"
+      },
+      "name": "Réponse 200",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [760, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseCode": 400,
+        "responseBody": "={ \"success\": false, \"error\": \"Payload invalide\" }"
+      },
+      "name": "Réponse 400",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [540, 400]
+    }
+  ],
+  "connections": {
+    "Webhook — Message entrant": {
+      "main": [[{ "node": "IF — payload valide", "type": "main", "index": 0 }]]
+    },
+    "IF — payload valide": {
+      "main": [
+        [{ "node": "POST → Backend traitement", "type": "main", "index": 0 }],
+        [{ "node": "Réponse 400", "type": "main", "index": 0 }]
+      ]
+    },
+    "POST → Backend traitement": {
+      "main": [[{ "node": "Réponse 200", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "saveDataSuccessExecution": "lastNode",
+    "saveManualExecutions": true
+  }
+}
