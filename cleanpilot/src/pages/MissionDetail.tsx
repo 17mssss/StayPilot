@@ -156,7 +156,7 @@ export default function MissionDetail() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="w-8 h-8 border-2 border-brand border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -165,7 +165,7 @@ export default function MissionDetail() {
     return (
       <div className="flex flex-col items-center justify-center h-screen gap-3 px-6">
         <p className="text-base text-dark font-semibold">Mission introuvable</p>
-        <button onClick={() => navigate('/')} className="text-sm text-brand">Retour</button>
+        <button onClick={() => navigate('/')} className="text-sm text-primary">Retour</button>
       </div>
     )
   }
@@ -198,7 +198,7 @@ export default function MissionDetail() {
           </div>
           {/* Timer */}
           {startTime && (
-            <div className="text-sm font-mono font-bold text-brand tabular-nums">
+            <div className="text-sm font-mono font-bold text-primary tabular-nums">
               {formatElapsed(elapsed)}
             </div>
           )}
@@ -211,13 +211,13 @@ export default function MissionDetail() {
         <div className="mx-4 mt-4 bg-surface rounded-2xl shadow-card p-4 space-y-2">
           {mission.address && (
             <p className="text-sm text-muted flex items-center gap-2">
-              <MapPin size={14} className="flex-shrink-0 text-brand" />
+              <MapPin size={14} className="flex-shrink-0 text-primary" />
               {mission.address}
             </p>
           )}
           {(mission.scheduled_at || mission.deadline) && (
             <p className="text-sm text-muted flex items-center gap-2">
-              <Clock size={14} className="flex-shrink-0 text-brand" />
+              <Clock size={14} className="flex-shrink-0 text-primary" />
               {formatTime(mission.scheduled_at)}
               {mission.deadline && <> → {formatTime(mission.deadline)}</>}
               {mission.duration_min && <span className="text-muted ml-1">(~{mission.duration_min} min)</span>}
@@ -254,10 +254,10 @@ export default function MissionDetail() {
           <div className="mx-4 mt-3">
             <div className="flex items-center justify-between mb-2 px-1">
               <p className="text-sm font-semibold text-dark">Checklist</p>
-              <span className="text-xs font-bold text-brand">{pct}%</span>
+              <span className="text-xs font-bold text-primary">{pct}%</span>
             </div>
             <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mb-3">
-              <div className="h-full bg-brand rounded-full transition-all" style={{ width: `${pct}%` }} />
+              <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${pct}%` }} />
             </div>
             <div className="space-y-2">
               {checklist.map(item => (
@@ -287,7 +287,7 @@ export default function MissionDetail() {
             {!isDone && (
               <button
                 onClick={() => fileRef.current?.click()}
-                className="flex items-center gap-1.5 text-sm text-brand font-medium"
+                className="flex items-center gap-1.5 text-sm text-primary font-medium"
               >
                 <Camera size={15} /> Ajouter
               </button>
@@ -346,7 +346,7 @@ export default function MissionDetail() {
           {!startTime ? (
             <button
               onClick={handleStart}
-              className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-brand text-white font-bold text-base active:scale-[0.98]"
+              className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-primary text-white font-bold text-base active:scale-[0.98]"
             >
               <Play size={18} /> Commencer la mission
             </button>

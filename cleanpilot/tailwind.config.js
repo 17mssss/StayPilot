@@ -4,25 +4,27 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
-        brand: {
-          DEFAULT: '#0EA5E9',   // sky blue — CleanPilot brand
-          dark: '#0284C7',
-          light: '#E0F2FE',
-        },
-        surface: '#FFFFFF',
-        bg: '#F0F9FF',
-        dark: '#0C1A2E',
-        muted: '#64748B',
-        border: '#E2E8F0',
-        urgent: '#EF4444',
+        primary: '#EA580C',
+        'primary-light': 'var(--color-primary-light)',
+        'primary-dark': '#C2410C',
+        dark: 'var(--color-dark)',
+        muted: 'var(--color-muted)',
+        bg: 'var(--color-bg)',
+        surface: 'var(--color-surface)',
+        border: 'var(--color-border)',
+        'border-light': 'var(--color-border-light)',
         success: '#22C55E',
-        warning: '#F59E0B',
+      },
+      fontFamily: {
+        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
       },
       boxShadow: {
-        card: '0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.04)',
+        card: '0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)',
+        'card-hover': '0 4px 12px rgba(0,0,0,0.08)',
       },
     },
   },

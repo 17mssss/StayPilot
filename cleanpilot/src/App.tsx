@@ -19,7 +19,7 @@ function BottomNav() {
           end
           className={({ isActive }) =>
             `flex flex-col items-center gap-0.5 px-6 py-2 transition-colors ${
-              isActive ? 'text-brand' : 'text-muted'
+              isActive ? 'text-primary' : 'text-muted'
             }`
           }
         >
@@ -30,7 +30,7 @@ function BottomNav() {
           to="/planning"
           className={({ isActive }) =>
             `flex flex-col items-center gap-0.5 px-6 py-2 transition-colors ${
-              isActive ? 'text-brand' : 'text-muted'
+              isActive ? 'text-primary' : 'text-muted'
             }`
           }
         >
@@ -49,7 +49,7 @@ function Layout() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen bg-bg">
-        <div className="w-8 h-8 border-2 border-brand border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -72,7 +72,7 @@ function AppRoutes() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen bg-bg">
-        <div className="w-8 h-8 border-2 border-brand border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }

@@ -58,7 +58,7 @@ function UrgencyBadge({ priority }: { priority: Mission['priority'] }) {
 
 function StatusIcon({ status }: { status: Mission['status'] }) {
   if (status === 'done') return <CheckCircle2 size={20} className="text-success" />
-  if (status === 'in_progress') return <Loader2 size={20} className="text-brand animate-spin" />
+  if (status === 'in_progress') return <Loader2 size={20} className="text-primary animate-spin" />
   return <div className="w-5 h-5 rounded-full border-2 border-border" />
 }
 
@@ -188,7 +188,7 @@ export default function MissionsToday() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-screen gap-3">
-        <div className="w-8 h-8 border-2 border-brand border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
         <p className="text-sm text-muted">Chargement des missions…</p>
       </div>
     )
@@ -219,13 +219,13 @@ export default function MissionsToday() {
         <div className="mt-3">
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-xs text-muted">{done.length}/{missions.length} terminées</span>
-            <span className="text-xs font-semibold text-brand">
+            <span className="text-xs font-semibold text-primary">
               {missions.length > 0 ? Math.round((done.length / missions.length) * 100) : 0}%
             </span>
           </div>
           <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
             <div
-              className="h-full bg-brand rounded-full transition-all duration-500"
+              className="h-full bg-primary rounded-full transition-all duration-500"
               style={{ width: `${missions.length > 0 ? (done.length / missions.length) * 100 : 0}%` }}
             />
           </div>
@@ -338,7 +338,7 @@ function MissionCard({ mission: m, onClick }: { mission: Mission; onClick: () =>
               </div>
               <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-brand rounded-full"
+                  className="h-full bg-primary rounded-full"
                   style={{ width: `${checklistTotal > 0 ? (checklistDone / checklistTotal) * 100 : 0}%` }}
                 />
               </div>

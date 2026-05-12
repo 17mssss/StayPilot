@@ -127,7 +127,7 @@ export default function Planning() {
           </button>
           <button onClick={() => setWeekOffset(0)}
             className={`flex-1 text-center text-sm font-medium rounded-lg py-1.5 transition-colors ${
-              isCurrentWeek ? 'bg-brand text-white' : 'bg-bg border border-border text-dark'
+              isCurrentWeek ? 'bg-primary text-white' : 'bg-bg border border-border text-dark'
             }`}>
             {weekLabel}
           </button>
@@ -142,7 +142,7 @@ export default function Planning() {
       <div className="flex-1 overflow-y-auto">
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <div className="w-6 h-6 border-2 border-brand border-t-transparent rounded-full animate-spin" />
+            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
           <div className="px-4 py-3 space-y-4">
@@ -155,15 +155,15 @@ export default function Planning() {
                   {/* Day header */}
                   <div className="flex items-center gap-2 mb-2">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${
-                      isToday ? 'bg-brand text-white' : 'bg-bg border border-border text-dark'
+                      isToday ? 'bg-primary text-white' : 'bg-bg border border-border text-dark'
                     }`}>
                       {date.getDate()}
                     </div>
                     <div>
-                      <span className={`text-sm font-semibold ${isToday ? 'text-brand' : 'text-dark'}`}>
+                      <span className={`text-sm font-semibold ${isToday ? 'text-primary' : 'text-dark'}`}>
                         {DAYS[dayIdx]}
                       </span>
-                      {isToday && <span className="ml-1.5 text-xs text-brand font-medium">Aujourd'hui</span>}
+                      {isToday && <span className="ml-1.5 text-xs text-primary font-medium">Aujourd'hui</span>}
                     </div>
                     {dayMissions.length > 0 && (
                       <span className="ml-auto text-xs text-muted">
