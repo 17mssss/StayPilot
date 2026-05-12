@@ -2,7 +2,7 @@ import { motion, useMotionValue, useMotionTemplate, useAnimationFrame } from "fr
 import { useState } from "react";
 import React from "react";
 
-const API_URL = import.meta.env.VITE_API_URL || "https://staypilot-backend-production.up.railway.app";
+const API_URL = import.meta.env.VITE_API_URL || "https://staypilot-production-ad31.up.railway.app";
 
 const BG = "#0f1117";
 
