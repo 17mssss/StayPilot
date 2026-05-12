@@ -1,7 +1,20 @@
-import React, { useState } from 'react'
-import { Settings, Eye, EyeOff, CheckCircle, FlaskConical, PlayCircle } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { Settings, Eye, EyeOff, CheckCircle, FlaskConical, PlayCircle, Copy, Check, RefreshCw } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { resetTour } from '../components/OnboardingTour'
+import { supabase } from '../lib/supabase'
+import { useAuth } from '../contexts/AuthContext'
+
+// ── Génération de code ────────────────────────────────────────────────────────
+
+function genCode(n = 6): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  let code = ''
+  for (let i = 0; i < n; i++) code += chars[Math.floor(Math.random() * chars.length)]
+  return code
+}
+
+// ── Composants ────────────────────────────────────────────────────────────────
 
 const FONTS = [
   { id: 'Inter',        label: 'Inter',         preview: 'Aa',  desc: 'Moderne · Par défaut' },
@@ -51,17 +64,86 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   )
 }
 
+// ── Code conciergerie ─────────────────────────────────────────────────────────
+
+function ConciergeCodeSection({
+  conciergeCode,
+  onRegenerate,
+  regenerating,
+}: {
+  conciergeCode: string
+  onRegenerate: () => void
+  regenerating: boolean
+}) {
+  const [copied, setCopied] = useState(false)
+
+  const copy = async () => {
+    await navigator.clipboard.writeText(conciergeCode)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <label className="block text-sm font-medium text-dark mb-1">
+          Code de la conciergerie
+        </label>
+        <p className="text-xs text-muted mb-2">
+          Transmettez ce code à vos agents de ménage pour qu'ils puissent rejoindre votre espace CleanPilot.
+        </p>
+        <div className="flex items-center gap-2">
+          <div className="flex-1 flex items-center justify-center bg-bg border-2 border-dashed border-primary/40 rounded-xl py-3 px-4">
+            <span className="text-2xl font-extrabold tracking-[0.3em] text-primary font-mono">
+              {conciergeCode || '——————'}
+            </span>
+          </div>
+          <button
+            onClick={copy}
+            disabled={!conciergeCode}
+            className="w-11 h-11 flex items-center justify-center rounded-xl border border-border bg-bg text-muted hover:text-dark hover:border-primary/50 transition-colors disabled:opacity-40"
+            title="Copier"
+          >
+            {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
+          </button>
+          <button
+            onClick={onRegenerate}
+            disabled={regenerating}
+            className="w-11 h-11 flex items-center justify-center rounded-xl border border-border bg-bg text-muted hover:text-dark hover:border-primary/50 transition-colors disabled:opacity-40"
+            title="Régénérer le code"
+          >
+            <RefreshCw size={16} className={regenerating ? 'animate-spin' : ''} />
+          </button>
+        </div>
+        <p className="text-xs text-muted mt-2">
+          ⚠️ Régénérer invalide l'ancien code — les agents devront utiliser le nouveau.
+        </p>
+      </div>
+    </div>
+  )
+}
+
+// ── Page principale ────────────────────────────────────────────────────────────
+
 export default function Parametres() {
+  const { user } = useAuth()
   const [saved, setSaved] = useState(false)
   const [selectedFont, setSelectedFont] = useState<string>(
     () => localStorage.getItem('staypilot_font') ?? 'Inter'
   )
+
+  // Profil conciergerie (Supabase)
+  const [conciergeProfileId, setConciergeProfileId] = useState<string | null>(null)
+  const [conciergeCode, setConciergeCode] = useState('')
+  const [conciergeLoading, setConciergeLoading] = useState(true)
+  const [regenerating, setRegenerating] = useState(false)
 
   const applyFont = (fontId: string) => {
     setSelectedFont(fontId)
     localStorage.setItem('staypilot_font', fontId)
     document.documentElement.style.setProperty('--app-font', `'${fontId}'`)
   }
+
   const [config, setConfig] = useState({
     clientName:         import.meta.env.VITE_CLIENT_NAME ?? '',
     clientPhone:        import.meta.env.VITE_CLIENT_PHONE ?? '',
@@ -75,8 +157,78 @@ export default function Parametres() {
 
   const set = (key: string) => (v: string) => setConfig((c) => ({ ...c, [key]: v }))
 
-  const handleSave = () => {
-    // In production: call API to update env / client config
+  // ── Chargement du profil conciergerie ─────────────────────────────────────
+  useEffect(() => {
+    if (!user) return
+
+    const loadProfile = async () => {
+      setConciergeLoading(true)
+
+      const { data, error } = await supabase
+        .from('concierge_profiles')
+        .select('id, company_name, concierge_code')
+        .eq('user_id', user.id)
+        .maybeSingle()
+
+      if (error) {
+        console.error('Erreur chargement profil conciergerie:', error)
+        setConciergeLoading(false)
+        return
+      }
+
+      if (data) {
+        setConciergeProfileId(data.id)
+        setConciergeCode(data.concierge_code)
+        setConfig(c => ({ ...c, clientName: data.company_name || c.clientName }))
+      } else {
+        // Créer un profil initial avec un code auto-généré
+        const newCode = genCode(6)
+        const { data: created, error: createErr } = await supabase
+          .from('concierge_profiles')
+          .insert({
+            user_id: user.id,
+            company_name: config.clientName || 'Ma Conciergerie',
+            concierge_code: newCode,
+          })
+          .select('id, concierge_code')
+          .single()
+
+        if (!createErr && created) {
+          setConciergeProfileId(created.id)
+          setConciergeCode(created.concierge_code)
+        }
+      }
+
+      setConciergeLoading(false)
+    }
+
+    loadProfile()
+  }, [user])
+
+  // ── Régénérer le code conciergerie ────────────────────────────────────────
+  const handleRegenerate = async () => {
+    if (!conciergeProfileId) return
+    setRegenerating(true)
+    const newCode = genCode(6)
+    const { error } = await supabase
+      .from('concierge_profiles')
+      .update({ concierge_code: newCode })
+      .eq('id', conciergeProfileId)
+
+    if (!error) setConciergeCode(newCode)
+    setRegenerating(false)
+  }
+
+  // ── Sauvegarde globale ────────────────────────────────────────────────────
+  const handleSave = async () => {
+    // Mettre à jour le nom de la conciergerie dans Supabase
+    if (user && conciergeProfileId) {
+      await supabase
+        .from('concierge_profiles')
+        .update({ company_name: config.clientName })
+        .eq('id', conciergeProfileId)
+    }
+
     setSaved(true)
     setTimeout(() => setSaved(false), 3000)
   }
@@ -134,6 +286,21 @@ export default function Parametres() {
               className="w-24 border border-border rounded-lg px-3 py-3 text-base sm:text-sm focus:outline-none focus:border-primary bg-bg text-dark transition-colors" />
             <span className="text-sm text-muted">% appliqué sur les revenus</span>
           </div>
+        </div>
+
+        {/* ── Code CleanPilot ── */}
+        <div className="pt-3 border-t border-border">
+          {conciergeLoading ? (
+            <div className="flex items-center gap-2 text-sm text-muted">
+              <RefreshCw size={14} className="animate-spin" /> Chargement du code…
+            </div>
+          ) : (
+            <ConciergeCodeSection
+              conciergeCode={conciergeCode}
+              onRegenerate={handleRegenerate}
+              regenerating={regenerating}
+            />
+          )}
         </div>
       </Section>
 

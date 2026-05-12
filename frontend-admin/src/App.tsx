@@ -33,6 +33,7 @@ import {
   Users2,
   Wrench,
   Zap,
+  Rss,
 } from 'lucide-react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { PlanProvider, usePlan } from './contexts/PlanContext'
@@ -61,6 +62,10 @@ import PricingDynamique from './pages/PricingDynamique'
 import CRMVoyageurs from './pages/CRMVoyageurs'
 import Maintenances from './pages/Maintenances'
 import InboxUnifie from './pages/InboxUnifie'
+import ChannelManager from './pages/ChannelManager'
+import Investisseurs from './pages/Investisseurs'
+import PortailInvestisseur from './pages/PortailInvestisseur'
+import EquipeMenage from './pages/EquipeMenage'
 
 // ── Navigation config ─────────────────────────────────────────────────────────
 // Sections épurées — 4 groupes logiques
@@ -91,6 +96,7 @@ const navSections: NavSection[] = [
     items: [
       { name: 'Propriétaires', path: '/proprietaires', icon: Users, tour: 'nav-proprietaires' },
       { name: 'Ménage',        path: '/menage',         icon: Sparkles                         },
+      { name: 'Équipe ménage', path: '/equipe-menage',  icon: Users2                           },
       { name: 'Maintenances',  path: '/maintenances',   icon: Wrench                           },
       {
         name: 'Facturation',
@@ -115,9 +121,16 @@ const navSections: NavSection[] = [
   {
     label: 'Automatisation',
     items: [
+      { name: 'Channel Manager',  path: '/channels', icon: Rss       },
       { name: 'Livrets QR',       path: '/livrets',  icon: BookOpen  },
       { name: 'Pricing dynamique',path: '/pricing',  icon: TrendingUp},
       { name: 'CRM Voyageurs',    path: '/crm',      icon: Users2    },
+    ],
+  },
+  {
+    label: 'Enterprise',
+    items: [
+      { name: 'Portail Investisseur', path: '/investisseurs', icon: TrendingUp },
     ],
   },
 ]
@@ -132,11 +145,13 @@ const titleMap: Record<string, string> = {
   '/logements':                 'Logements',
   '/messages':                  'Messagerie IA',
   '/menage':                    'Ménage',
+  '/equipe-menage':             'Équipe ménage',
   '/proprietaires':             'Propriétaires',
   '/messages-proprietaires':    'Messages propriétaires',
   '/facturation/nouvelle':      'Générer une facture',
   '/facturation/historique':    'Historique des factures',
   '/avis':                      'Avis voyageurs',
+  '/channels':                  'Channel Manager',
   '/livrets':                   'Livrets d\'accueil QR',
   '/pricing':                   'Pricing dynamique',
   '/maintenances':              'Maintenances',
@@ -145,6 +160,7 @@ const titleMap: Record<string, string> = {
   '/simulation':                'Simulation',
   '/abonnement':                'Abonnement',
   '/inbox':                     'Inbox Unifié',
+  '/investisseurs':             'Portail Investisseur',
 }
 
 // ── Mobile bottom navigation ──────────────────────────────────────────────────
@@ -486,6 +502,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/login"    element={user ? <Navigate to="/" replace /> : <Login />} />
       <Route path="/register" element={user ? <Navigate to="/" replace /> : <Register />} />
+      <Route path="/portail/:token" element={<PortailInvestisseur />} />
 
       <Route element={<Layout />}>
         <Route path="/"                        element={<Dashboard />} />
@@ -499,6 +516,7 @@ function AppRoutes() {
         <Route path="/facturation/nouvelle"    element={<FacturationNouvelle />} />
         <Route path="/facturation/historique"  element={<FacturationHistorique />} />
         <Route path="/avis"                    element={<Avis />} />
+        <Route path="/channels"                element={<ChannelManager />} />
         <Route path="/livrets"                 element={<Livrets />} />
         <Route path="/pricing"                 element={<PricingDynamique />} />
         <Route path="/maintenances"            element={<Maintenances />} />
@@ -509,6 +527,8 @@ function AppRoutes() {
         <Route path="/simulation"              element={<Simulation />} />
         <Route path="/templates"               element={<Templates />} />
         <Route path="/abonnement"              element={<Abonnement />} />
+        <Route path="/investisseurs"           element={<Investisseurs />} />
+        <Route path="/equipe-menage"           element={<EquipeMenage />} />
         <Route path="/factures"                element={<Navigate to="/facturation/historique" replace />} />
       </Route>
 

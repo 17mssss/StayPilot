@@ -2,13 +2,17 @@ import React from 'react'
 import {
   BrowserRouter, Routes, Route, Navigate, NavLink, Outlet, useNavigate,
 } from 'react-router-dom'
-import { Home, Calendar, User, LogOut } from 'lucide-react'
+import { Home, Calendar } from 'lucide-react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import Login from './pages/Login'
+import Register from './pages/Register'
 import MissionsToday from './pages/MissionsToday'
 import MissionDetail from './pages/MissionDetail'
 import Planning from './pages/Planning'
+import PendingApproval from './pages/PendingApproval'
 import './index.css'
+
+// ── Barre de navigation basse ─────────────────────────────────────────────────
 
 function BottomNav() {
   return (
@@ -42,20 +46,19 @@ function BottomNav() {
   )
 }
 
+// ── Spinner ───────────────────────────────────────────────────────────────────
+
+function Spinner() {
+  return (
+    <div className="flex items-center justify-center h-screen bg-bg">
+      <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+    </div>
+  )
+}
+
+// ── Layout protégé (agents approuvés) ────────────────────────────────────────
+
 function Layout() {
-  const { user, loading, logout } = useAuth()
-  const navigate = useNavigate()
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-bg">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    )
-  }
-
-  if (!user) return <Navigate to="/login" replace />
-
   return (
     <div className="flex flex-col min-h-screen">
       <div className="flex-1 pb-14">
@@ -66,29 +69,56 @@ function Layout() {
   )
 }
 
-function AppRoutes() {
-  const { user, loading } = useAuth()
+// ── Routeur principal ─────────────────────────────────────────────────────────
 
-  if (loading) {
+function AppRoutes() {
+  const { user, agent, loading, agentLoading } = useAuth()
+
+  // Attendre la résolution de l'auth et du profil agent
+  if (loading || (user && agentLoading)) return <Spinner />
+
+  // ── Utilisateur non connecté ──
+  if (!user) {
     return (
-      <div className="flex items-center justify-center h-screen bg-bg">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
+      <Routes>
+        <Route path="/login"    element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="*"         element={<Navigate to="/login" replace />} />
+      </Routes>
     )
   }
 
+  // ── Connecté mais pas encore de profil agent (registration incomplète) ──
+  if (!agent) {
+    return (
+      <Routes>
+        <Route path="/register" element={<Register />} />
+        <Route path="*"         element={<Navigate to="/register" replace />} />
+      </Routes>
+    )
+  }
+
+  // ── Demande en attente ou refusée ──
+  if (agent.status === 'pending' || agent.status === 'declined') {
+    return <PendingApproval />
+  }
+
+  // ── Agent approuvé — application complète ──
   return (
     <Routes>
-      <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
+      <Route path="/login"    element={<Navigate to="/" replace />} />
+      <Route path="/register" element={<Navigate to="/" replace />} />
       <Route element={<Layout />}>
-        <Route index element={<MissionsToday />} />
-        <Route path="/missions/:id" element={<MissionDetail />} />
-        <Route path="/planning" element={<Planning />} />
+        <Route index                       element={<MissionsToday />} />
+        <Route path="/missions/:id"        element={<MissionDetail />} />
+        <Route path="/planning"            element={<Planning />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }
+
+// ── App root ──────────────────────────────────────────────────────────────────
 
 export default function App() {
   return (

@@ -1,10 +1,12 @@
 import React, { useState, type FormEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Eye, EyeOff, AlertCircle, Loader2, CheckCircle2, ArrowLeft } from 'lucide-react'
 
 type Mode = 'login' | 'forgot' | 'forgot-sent'
 
 export default function Login() {
+  const navigate = useNavigate()
   const [mode, setMode] = useState<Mode>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -148,7 +150,17 @@ export default function Login() {
           )}
         </div>
 
-        <p className="text-center text-xs text-muted mt-6">CleanPilot by StayPilot — v1.0</p>
+        <p className="text-center text-sm text-muted mt-5">
+          Première connexion ?{' '}
+          <button
+            onClick={() => navigate('/register')}
+            className="text-primary font-medium hover:underline"
+          >
+            Créer un compte
+          </button>
+        </p>
+
+        <p className="text-center text-xs text-muted mt-3">CleanPilot by StayPilot — v1.0</p>
       </div>
     </div>
   )
