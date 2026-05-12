@@ -6,7 +6,7 @@ import {
 import {
   LayoutDashboard, Calendar, TrendingUp, FileText,
   FolderOpen, User, LogOut, Menu, X, Bell, Home, Sun, Moon,
-  MessageSquare,
+  MessageSquare, BarChart2,
 } from 'lucide-react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import api from './lib/api'
@@ -21,6 +21,8 @@ import Documents from './pages/Documents'
 import Profil from './pages/Profil'
 import Notifications from './pages/Notifications'
 import Messages from './pages/Messages'
+import Releves from './pages/Releves'
+import LogementDetail from './pages/LogementDetail'
 
 const NAV_ITEMS = [
   { to: '/',               label: 'Mon tableau de bord', icon: LayoutDashboard, end: true },
@@ -29,6 +31,7 @@ const NAV_ITEMS = [
   { to: '/factures',       label: 'Mes factures',        icon: FileText },
   { to: '/logements',      label: 'Mes logements',       icon: Home },
   { to: '/documents',      label: 'Mes documents',       icon: FolderOpen },
+  { to: '/releves',        label: 'Mes relevés',         icon: BarChart2 },
   { to: '/notifications',  label: 'Notifications',       icon: Bell },
   { to: '/messages',       label: 'Messages',            icon: MessageSquare },
   { to: '/profil',         label: 'Mon profil',          icon: User },
@@ -41,6 +44,7 @@ const TITLE_MAP: Record<string, string> = {
   '/factures':       'Mes factures',
   '/logements':      'Mes logements',
   '/documents':      'Mes documents',
+  '/releves':        'Mes relevés',
   '/notifications':  'Notifications',
   '/messages':       'Messages',
   '/profil':         'Mon profil',
@@ -261,7 +265,9 @@ function AppRoutes() {
         <Route path="/revenus" element={<Revenus />} />
         <Route path="/factures" element={<Factures />} />
         <Route path="/logements" element={<Logements />} />
+        <Route path="/logements/:id" element={<LogementDetail />} />
         <Route path="/documents" element={<Documents />} />
+        <Route path="/releves" element={<Releves />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/messages" element={<Messages />} />
         <Route path="/profil" element={<Profil />} />

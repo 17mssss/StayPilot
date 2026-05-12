@@ -14,6 +14,9 @@ interface Invoice {
   id: string; invoice_number?: string; numero?: string
   created_at?: string; total_ttc?: number; montant?: number; status?: string
 }
+interface Avis {
+  id: string; rating: number; guest_name: string; date_avis?: string
+}
 
 function KPICard({ title, value, icon, accent, sub }: {
   title: string; value: string | number; icon: React.ReactNode; accent?: boolean; sub?: string
@@ -144,6 +147,7 @@ function MiniCalendar({ reservations }: { reservations: Reservation[] }) {
 export default function Dashboard() {
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [invoices, setInvoices] = useState<Invoice[]>([])
+  const [avisList, setAvisList] = useState<Avis[]>([])
   const [loading, setLoading] = useState(true)
   const now = new Date()
   const today = now.toISOString().split('T')[0]
@@ -152,9 +156,11 @@ export default function Dashboard() {
     Promise.all([
       api.get<Reservation[]>('/api/reservations').then((r) => r.data).catch(() => []),
       api.get<Invoice[]>('/api/invoices').then((r) => r.data).catch(() => []),
-    ]).then(([res, inv]) => {
+      api.get<Avis[]>('/api/avis?limit=200').then((r) => r.data).catch(() => []),
+    ]).then(([res, inv, avis]) => {
       setReservations(res)
       setInvoices(inv)
+      setAvisList(Array.isArray(avis) ? avis : [])
       setLoading(false)
     })
   }, [])
@@ -188,6 +194,11 @@ export default function Dashboard() {
   const lastInvoice = [...invoices].sort((a, b) =>
     new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime()
   )[0]
+
+  // Average rating from real reviews
+  const avgRating = avisList.length > 0
+    ? avisList.reduce((s, a) => s + (a.rating ?? 0), 0) / avisList.length
+    : null
 
   // Estimated next payout (revenue of current month)
   const nextPayout = revenueThisMonth
@@ -325,20 +336,26 @@ export default function Dashboard() {
         {/* Recent reviews */}
         <div className="bg-surface rounded-xl shadow-card p-5">
           <p className="text-sm font-semibold text-dark mb-3">Avis récents</p>
-          <div className="flex items-center gap-3 py-2">
-            <div className="text-3xl font-extrabold text-dark">4.8</div>
-            <div>
-              <div className="flex gap-0.5">
-                {[1,2,3,4,5].map((s) => (
-                  <Star key={s} size={13} className={s <= 4 ? 'fill-yellow-400 text-yellow-400' : 'text-gray-200 fill-gray-200'} />
-                ))}
+          {avgRating !== null ? (
+            <>
+              <div className="flex items-center gap-3 py-2">
+                <div className="text-3xl font-extrabold text-dark">{avgRating.toFixed(1)}</div>
+                <div>
+                  <div className="flex gap-0.5">
+                    {[1,2,3,4,5].map((s) => (
+                      <Star key={s} size={13} className={s <= Math.round(avgRating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-200 fill-gray-200'} />
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted mt-0.5">Moyenne générale</p>
+                </div>
               </div>
-              <p className="text-xs text-muted mt-0.5">Moyenne générale</p>
-            </div>
-          </div>
-          <p className="text-xs text-muted mt-2">
-            Basé sur {reservations.filter((r) => r.status === 'confirmed').length} séjours confirmés
-          </p>
+              <p className="text-xs text-muted mt-2">
+                Basé sur {avisList.length} avis
+              </p>
+            </>
+          ) : (
+            <p className="text-xs text-muted text-center py-4">Aucun avis disponible</p>
+          )}
         </div>
       </div>
     </div>
