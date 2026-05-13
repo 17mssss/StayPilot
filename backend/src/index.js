@@ -29,11 +29,16 @@ const contactRoutes         = require('./routes/contact');
 const pricingDynamiqueRoutes = require('./routes/pricing-dynamique');
 const crmVoyageursRoutes    = require('./routes/crm-voyageurs')
 const authDeviceRoutes      = require('./routes/auth-device');
+const reportsRoutes         = require('./routes/reports');
+const channelsRoutes        = require('./routes/channels');
+const { investisseursRouter, portailRouter } = require('./routes/investisseurs');
 
 // Services cron
 const { startPolling }           = require('./services/superhote');
 const { startSyncManager }       = require('./services/syncManager');
 const { startMessageScheduler }  = require('./services/scheduler');
+const { startReportsCron }       = require('./services/pdfReports');
+const { startIcalCron }          = require('./services/icalSync');
 
 const app  = express();
 const PORT = process.env.PORT || 3001;
@@ -55,6 +60,7 @@ const ALLOWED_ORIGINS = [
   process.env.FRONTEND_URL,
   'https://staypilot.cc',
   'https://www.staypilot.cc',
+  'https://frontend-admin-neon-nine.vercel.app',
   'http://localhost:3000',
   'http://localhost:3002',
   'http://localhost:3003',
@@ -132,6 +138,10 @@ app.use('/api/sync',           syncRoutes);
 app.use('/api/contact',          contactRoutes); // Formulaire demande de démo landing page
 app.use('/api/pricing-dynamique', pricingDynamiqueRoutes);
 app.use('/api/crm-voyageurs',     crmVoyageursRoutes)
+app.use('/api/reports',          reportsRoutes);
+app.use('/api/channels',         channelsRoutes);
+app.use('/api/investisseurs',    investisseursRouter);
+app.use('/api/portail',          portailRouter);
 // Double auth — pas de middleware authenticate (appelé avant la session)
 app.use('/api/auth',              strictLimiter, authDeviceRoutes);
 
@@ -214,10 +224,12 @@ app.listen(PORT, () => {
   if (process.env.ENABLE_POLLING !== 'false') {
     startPolling();        // Superhote (legacy)
     startSyncManager();    // Smoobu + Hostaway + Lodgify
+    startIcalCron();       // Channel Manager iCal (toutes les heures)
   }
   if (process.env.ENABLE_SCHEDULER !== 'false') {
     startMessageScheduler();
   }
+  startReportsCron();
 });
 
 module.exports = app;
