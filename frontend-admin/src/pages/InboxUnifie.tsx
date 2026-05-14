@@ -1,9 +1,10 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
   Search, Send, Sparkles, Settings, X, Zap,
-  ChevronRight, CheckCheck, AlertTriangle, Plus,
+  ChevronRight, CheckCheck, AlertTriangle, Plus, Loader2,
 } from 'lucide-react'
 import FeatureGate from '../components/FeatureGate'
+import api from '../lib/api'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -83,105 +84,27 @@ const CHANNEL_ICON: Record<ChannelId, string> = {
   vrbo:     '🏡',
 }
 
-// ─── Mock data ─────────────────────────────────────────────────────────────────
-
-const CONVERSATIONS: Conversation[] = [
-  {
-    id: '1', guestName: 'Sophie Martin', initials: 'SM',
-    avatarGradient: 'from-pink-400 to-rose-500',
-    channel: 'airbnb', property: 'Appt Marais', lastMessage: 'Est-ce que le parking est inclus ?',
-    time: '5 min', unread: 2, checkIn: '12 mai', checkOut: '15 mai',
-    messages: [
-      { id: 'm1', from: 'guest', text: 'Bonjour ! Je serai là vers 16h, est-ce que c\'est ok ?', time: '14:20' },
-      { id: 'm2', from: 'host',  text: 'Bonjour Sophie ! Oui, parfait. Le code de la porte est 4821.', time: '14:35' },
-      { id: 'm3', from: 'guest', text: 'Est-ce que le parking est inclus ?', time: '14:55' },
-      { id: 'm4', from: 'guest', text: 'Ou y a-t-il un parking à proximité ?', time: '14:56' },
-    ],
-  },
-  {
-    id: '2', guestName: 'Marco Rossi', initials: 'MR',
-    avatarGradient: 'from-orange-400 to-amber-500',
-    channel: 'booking', property: 'Studio Bastille', lastMessage: 'Merci beaucoup pour tout !',
-    time: '2h', unread: 0, checkIn: '10 mai', checkOut: '12 mai',
-    messages: [
-      { id: 'm5', from: 'guest', text: 'Bonsoir, nous sommes bien arrivés. Tout est parfait.', time: '19:10' },
-      { id: 'm6', from: 'host',  text: 'Super, bonne nuit ! N\'hésitez pas si besoin.', time: '19:15' },
-      { id: 'm7', from: 'guest', text: 'Merci beaucoup pour tout !', time: '20:02' },
-    ],
-  },
-  {
-    id: '3', guestName: 'Emma Dupuis', initials: 'ED',
-    avatarGradient: 'from-violet-400 to-purple-500',
-    channel: 'whatsapp', property: 'Loft Oberkampf', lastMessage: 'Le lave-vaisselle ne démarre pas 😅',
-    time: '3h', unread: 1, checkIn: '11 mai', checkOut: '14 mai',
-    messages: [
-      { id: 'm8', from: 'guest', text: 'Bonjour ! On vient d\'arriver, tout est super.', time: '11:30' },
-      { id: 'm9', from: 'guest', text: 'Le lave-vaisselle ne démarre pas 😅', time: '13:45' },
-    ],
-  },
-  {
-    id: '4', guestName: 'James Wilson', initials: 'JW',
-    avatarGradient: 'from-sky-400 to-blue-500',
-    channel: 'airbnb', property: 'Appt Marais', lastMessage: 'Perfect, thanks!',
-    time: 'Hier', unread: 0, checkIn: '9 mai', checkOut: '11 mai',
-    messages: [
-      { id: 'm10', from: 'guest', text: 'Hello! What time is the checkout exactly?', time: '09:15' },
-      { id: 'm11', from: 'host',  text: 'Hi James! Checkout is at 11am. Leave the key in the lockbox.', time: '09:30' },
-      { id: 'm12', from: 'guest', text: 'Perfect, thanks!', time: '09:32' },
-    ],
-  },
-  {
-    id: '5', guestName: 'Lucie Bernard', initials: 'LB',
-    avatarGradient: 'from-teal-400 to-emerald-500',
-    channel: 'email', property: 'Studio Bastille', lastMessage: 'Avez-vous des restos à recommander ?',
-    time: 'Hier', unread: 0, checkIn: '13 mai', checkOut: '16 mai',
-    messages: [
-      { id: 'm13', from: 'guest', text: 'Bonjour, j\'ai réservé via votre site. Avez-vous des recommandations de restaurants dans le quartier ?', time: 'Hier 18:00' },
-    ],
-  },
-  {
-    id: '6', guestName: 'Carlos García', initials: 'CG',
-    avatarGradient: 'from-lime-400 to-green-500',
-    channel: 'vrbo', property: 'Loft Oberkampf', lastMessage: '¿Hay toallas extra disponibles?',
-    time: '2j', unread: 0, checkIn: '8 mai', checkOut: '10 mai',
-    messages: [
-      { id: 'm14', from: 'guest', text: '¿Hay toallas extra disponibles?', time: '2j 10:00' },
-    ],
-  },
+// Génère initiales et gradient avatar à partir du nom
+function getInitials(name: string) {
+  return name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2)
+}
+const AVATAR_GRADIENTS = [
+  'from-pink-400 to-rose-500', 'from-orange-400 to-amber-500', 'from-violet-400 to-purple-500',
+  'from-sky-400 to-blue-500', 'from-teal-400 to-emerald-500', 'from-lime-400 to-green-500',
+  'from-indigo-400 to-blue-600', 'from-red-400 to-pink-500',
 ]
-
-// Plusieurs variations par conversation pour simuler une vraie régénération IA
-const AI_REPLIES: Record<string, string[]> = {
-  '1': [
-    'Bonjour Sophie ! Le parking n\'est pas inclus, mais il y a un parking public Indigo à 50m (rue de Bretagne). Environ 3€/h ou 18€/nuit. Bonne installation !',
-    'Bonjour Sophie ! Pas de parking privé malheureusement, mais je vous conseille le parking Sainte-Croix-de-la-Bretonnerie à 2 min à pied — très pratique et abordable. Bonne arrivée !',
-    'Bonsoir Sophie ! Le logement n\'inclut pas de parking, mais l\'application PayByPhone couvre toute la zone — vous pouvez payer votre stationnement directement depuis votre téléphone. À bientôt !',
-  ],
-  '2': [
-    'Avec plaisir Marco, bonne route ! N\'hésitez pas à laisser un avis, ça nous ferait vraiment plaisir 😊',
-    'Ravi que votre séjour se soit bien passé ! Si vous repassez par Paris, n\'hésitez pas à réserver à nouveau. Un petit avis nous ferait très plaisir 🌟',
-    'Merci à vous Marco ! C\'était un plaisir de vous accueillir. Bonne continuation et à peut-être bientôt !',
-  ],
-  '3': [
-    'Bonjour Emma ! Appuyez sur le bouton "Marche" puis maintenez "Programme" 3 secondes. Si ça ne règle pas le problème, appelez-nous au 06 XX XX XX XX.',
-    'Bonjour Emma ! Essayez de débrancher l\'appareil 30 secondes puis de le rebrancher — ça réinitialise souvent le programme. Si le souci persiste, je suis joignable au 06 XX XX XX XX !',
-    'Bonjour ! Vérifiez que le verrou de la porte est bien enclenché (voyant vert). Si le lave-vaisselle ne démarre toujours pas, contactez-moi directement et j\'envoie quelqu\'un.',
-  ],
-  '4': [
-    'Hi James! Happy you enjoyed your stay. Please leave the keys in the lockbox by the door. Hope to host you again!',
-    'Hi James, glad to hear it! The lockbox is right next to the entrance — just drop the keys there when you leave. It was a pleasure having you!',
-    'Thanks James! Feel free to check out anytime before 11am. Don\'t forget to leave the keys in the lockbox. Hope to see you in Paris again!',
-  ],
-  '5': [
-    'Bonjour Lucie ! Je recommande "Le Bistrot Paul Bert" pour une cuisine française traditionnelle, et "Septime" pour une expérience gastronomique. Les deux sont à 5 min à pied 🍽️',
-    'Bonjour Lucie ! Pour les restaurants : "Clown Bar" pour la bistronomie (réserver à l\'avance !), et "Au Passage" pour des petites assiettes à partager. Vous allez vous régaler !',
-    'Bonjour ! Le quartier regorge de bonnes adresses : "Yard" pour une cuisine moderne, ou "Bonvivant" pour un brunch le week-end. Bon appétit et bon séjour !',
-  ],
-  '6': [
-    '¡Hola Carlos! Sí, hay toallas extra en el armario del baño, segundo estante. ¡Que disfrute su estancia!',
-    '¡Buenos días Carlos! Las toallas adicionales están en el armario blanco del pasillo. ¡No dude en pedirme si necesita algo más!',
-    '¡Hola! Encontrará toallas de repuesto bajo el lavabo del baño. Cualquier cosa que necesite, estoy a su disposición. ¡Buen viaje!',
-  ],
+function avatarGradient(name: string) {
+  let h = 0
+  for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h)
+  return AVATAR_GRADIENTS[Math.abs(h) % AVATAR_GRADIENTS.length]
+}
+function timeAgo(iso: string) {
+  const diff = (Date.now() - new Date(iso).getTime()) / 1000
+  if (diff < 60) return 'À l\'instant'
+  if (diff < 3600) return `${Math.floor(diff / 60)} min`
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h`
+  if (diff < 172800) return 'Hier'
+  return `${Math.floor(diff / 86400)}j`
 }
 
 // ─── Groupes dans la sidebar ───────────────────────────────────────────────────
@@ -238,53 +161,95 @@ function APISetupPanel({ onClose }: { onClose: () => void }) {
 // ─── Page principale ───────────────────────────────────────────────────────────
 
 export default function InboxUnifie() {
-  const [active, setActive]         = useState<Conversation>(CONVERSATIONS[0])
+  const [conversations, setConversations] = useState<Conversation[]>([])
+  const [active, setActive]         = useState<Conversation | null>(null)
   const [filter, setFilter]         = useState<ChannelId | 'all'>('all')
   const [search, setSearch]         = useState('')
   const [reply, setReply]           = useState('')
   const [aiSuggestion, setAI]       = useState(false)
-  const [aiIndex, setAiIndex]       = useState<Record<string, number>>({})
   const [aiLoading, setAiLoading]   = useState(false)
   const [showSetup, setShowSetup]   = useState(false)
-  const [sent, setSent]             = useState<string[]>([])
+  const [sending, setSending]       = useState(false)
+  const [loading, setLoading]       = useState(true)
+  const messagesEndRef              = useRef<HTMLDivElement>(null)
 
-  const visible = CONVERSATIONS.filter(c => {
+  // Charger les conversations depuis l'API
+  useEffect(() => {
+    api.get('/api/inbox')
+      .then(r => {
+        const convs: Conversation[] = (r.data?.data ?? []).map((c: Conversation) => ({
+          ...c,
+          initials: getInitials(c.guestName),
+          avatarGradient: avatarGradient(c.guestName),
+          time: timeAgo(c.time),
+          messages: (c.messages ?? []).reverse(),
+        }))
+        setConversations(convs)
+        if (convs.length > 0) setActive(convs[0])
+      })
+      .catch(() => setConversations([]))
+      .finally(() => setLoading(false))
+  }, [])
+
+  // Scroll auto vers le bas à chaque nouveau message
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [active?.messages?.length])
+
+  const visible = conversations.filter(c => {
     if (filter !== 'all' && c.channel !== filter) return false
     if (search && !c.guestName.toLowerCase().includes(search.toLowerCase()) &&
         !c.lastMessage.toLowerCase().includes(search.toLowerCase())) return false
     return true
   })
 
-  const totalUnread = CONVERSATIONS.reduce((n, c) => n + c.unread, 0)
+  const totalUnread = conversations.reduce((n, c) => n + c.unread, 0)
 
-  const handleSend = () => {
-    if (!reply.trim()) return
-    setSent(p => [...p, active.id + ':' + reply])
+  const handleSend = async () => {
+    if (!reply.trim() || !active) return
+    const text = reply.trim()
     setReply('')
     setAI(false)
-  }
+    setSending(true)
 
-  const getCurrentAI = () => {
-    const variants = AI_REPLIES[active.id] ?? []
-    const idx = aiIndex[active.id] ?? 0
-    return variants[idx % variants.length] ?? ''
-  }
+    // Optimistic update
+    const tempMsg: Message = { id: `tmp-${Date.now()}`, from: 'host', text, time: 'À l\'instant' }
+    setActive(a => a ? { ...a, messages: [...(a.messages ?? []), tempMsg], lastMessage: text } : a)
+    setConversations(prev => prev.map(c => c.id === active.id ? { ...c, lastMessage: text } : c))
 
-  const regenerateAI = () => {
-    setAiLoading(true)
-    setTimeout(() => {
-      setAiIndex(prev => {
-        const cur = prev[active.id] ?? 0
-        const variants = AI_REPLIES[active.id] ?? []
-        return { ...prev, [active.id]: (cur + 1) % Math.max(variants.length, 1) }
+    try {
+      await api.post(`/api/inbox/${active.id}/messages`, {
+        content: text,
+        channel: active.channel,
+        guestName: active.guestName,
+        propertyName: active.property,
+        checkIn: active.checkIn,
+        checkOut: active.checkOut,
       })
-      setAiLoading(false)
-    }, 600)
+    } catch { /* message sauvegardé localement dans tous les cas */ }
+    finally { setSending(false) }
+  }
+
+  const regenerateAI = async () => {
+    if (!active) return
+    setAiLoading(true)
+    try {
+      const lastGuestMsg = [...(active.messages ?? [])].reverse().find(m => m.from === 'guest')
+      const r = await api.post(`/api/inbox/${active.id}/ai-reply`, {
+        lastMessage: lastGuestMsg?.text ?? active.lastMessage,
+        guestName: active.guestName,
+        property: active.property,
+      })
+      const aiText = r.data?.data?.reply ?? ''
+      if (aiText) setReply(aiText)
+    } catch {
+      // Fallback silencieux
+    } finally { setAiLoading(false) }
   }
 
   const useAI = () => {
-    setReply(getCurrentAI())
     setAI(false)
+    regenerateAI()
   }
 
   return (
@@ -366,7 +331,7 @@ export default function InboxUnifie() {
                       {group.label}
                     </p>
                     {groupConvs.map(conv => {
-                      const isActive = active.id === conv.id
+                      const isActive = active?.id === conv.id
                       return (
                         <button
                           key={conv.id}
@@ -410,10 +375,16 @@ export default function InboxUnifie() {
                 )
               })}
 
-              {visible.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-16 text-muted gap-2">
+              {loading && (
+                <div className="flex items-center justify-center py-16 text-muted">
+                  <Loader2 size={22} className="animate-spin" />
+                </div>
+              )}
+              {!loading && visible.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-16 text-muted gap-2 px-4 text-center">
                   <Search size={28} className="opacity-20" />
-                  <p className="text-sm">Aucune conversation</p>
+                  <p className="text-sm font-medium">Aucune conversation</p>
+                  <p className="text-xs opacity-60">Les messages arrivent ici dès qu'un canal est connecté, ou ajoutez-en un manuellement.</p>
                 </div>
               )}
             </nav>
@@ -421,6 +392,13 @@ export default function InboxUnifie() {
 
           {/* ══ CONVERSATION ═════════════════════════════════════════════════════ */}
           <div className="flex-1 flex flex-col min-w-0 bg-bg">
+
+            {!active ? (
+              <div className="flex-1 flex flex-col items-center justify-center text-muted gap-3">
+                <Zap size={36} className="opacity-10" />
+                <p className="text-sm">Sélectionnez une conversation</p>
+              </div>
+            ) : (<>
 
             {/* Header */}
             <div className="flex items-center gap-4 px-6 py-4 bg-surface border-b border-border flex-shrink-0">
@@ -442,17 +420,17 @@ export default function InboxUnifie() {
                   </span>
                 </div>
                 <p className="text-xs text-muted truncate mt-0.5">
-                  {active.property} · Check-in {active.checkIn} · Check-out {active.checkOut}
+                  {active.property}{active.checkIn ? ` · Check-in ${active.checkIn}` : ''}{active.checkOut ? ` · Check-out ${active.checkOut}` : ''}
                 </p>
               </div>
             </div>
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto px-6 py-5 space-y-2">
-              {active.messages.map((msg, i) => {
+              {(active.messages ?? []).map((msg, i) => {
                 const isHost    = msg.from === 'host'
-                const prevSame  = i > 0 && active.messages[i - 1].from === msg.from
-                const nextSame  = i < active.messages.length - 1 && active.messages[i + 1].from === msg.from
+                const prevSame  = i > 0 && (active.messages ?? [])[i - 1].from === msg.from
+                const nextSame  = i < (active.messages ?? []).length - 1 && (active.messages ?? [])[i + 1].from === msg.from
 
                 return (
                   <div key={msg.id} className={`flex ${isHost ? 'justify-end' : 'justify-start'} ${prevSame ? 'mt-0.5' : 'mt-3'}`}>
@@ -483,10 +461,11 @@ export default function InboxUnifie() {
                   </div>
                 )
               })}
+              <div ref={messagesEndRef} />
             </div>
 
             {/* Suggestion IA */}
-            {aiSuggestion && (AI_REPLIES[active.id]?.length ?? 0) > 0 && (
+            {aiSuggestion && (
               <div className="mx-5 mb-3 rounded-2xl border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/20 p-4">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
@@ -498,19 +477,22 @@ export default function InboxUnifie() {
                   <button onClick={regenerateAI} disabled={aiLoading}
                     className="flex items-center gap-1 text-[11px] font-medium text-purple-600 dark:text-purple-400 hover:underline disabled:opacity-50">
                     {aiLoading
-                      ? <><span className="w-3 h-3 border border-purple-500 border-t-transparent rounded-full animate-spin inline-block" /> Génération…</>
+                      ? <><Loader2 size={11} className="animate-spin" /> Génération…</>
                       : '↺ Régénérer'
                     }
                   </button>
                 </div>
-                <p className={`text-sm text-dark leading-relaxed mb-3 transition-opacity ${aiLoading ? 'opacity-40' : 'opacity-100'}`}>
-                  {getCurrentAI()}
-                </p>
+                {reply && (
+                  <p className={`text-sm text-dark leading-relaxed mb-3 transition-opacity ${aiLoading ? 'opacity-40' : 'opacity-100'}`}>
+                    {reply}
+                  </p>
+                )}
+                {aiLoading && !reply && (
+                  <div className="flex items-center gap-2 mb-3 text-muted text-sm">
+                    <Loader2 size={14} className="animate-spin" /> Génération en cours…
+                  </div>
+                )}
                 <div className="flex gap-2">
-                  <button onClick={useAI} disabled={aiLoading}
-                    className="flex-1 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white text-sm font-semibold transition-colors">
-                    Utiliser
-                  </button>
                   <button onClick={() => setAI(false)}
                     className="py-2 px-4 rounded-xl border border-border text-muted hover:text-dark text-sm transition-colors">
                     Ignorer
@@ -532,7 +514,7 @@ export default function InboxUnifie() {
                 />
                 <div className="flex items-center gap-2 pb-0.5">
                   <button
-                    onClick={() => setAI(v => !v)}
+                    onClick={() => { setAI(v => !v); if (!aiSuggestion) regenerateAI() }}
                     title="Suggestion IA"
                     className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${
                       aiSuggestion
@@ -544,17 +526,18 @@ export default function InboxUnifie() {
                   </button>
                   <button
                     onClick={handleSend}
-                    disabled={!reply.trim()}
+                    disabled={!reply.trim() || sending}
                     className="w-8 h-8 rounded-xl bg-primary hover:bg-primary-dark disabled:opacity-30 text-white flex items-center justify-center transition-colors"
                   >
-                    <Send size={14} />
+                    {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
                   </button>
                 </div>
               </div>
               <p className="text-[10px] text-muted text-center mt-2">
-                Mode démo · Connectez vos APIs pour envoyer de vrais messages
+                Messages sauvegardés · Branchez vos APIs pour envoyer sur les plateformes
               </p>
             </div>
+            </>)}
           </div>
         </div>
       </div>

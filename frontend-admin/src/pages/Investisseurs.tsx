@@ -174,12 +174,18 @@ export default function Investisseurs() {
     setTimeout(() => setCopiedId(null), 2000)
   }
 
-  const handleSendEmail = (inv: Investisseur) => {
-    const subject = encodeURIComponent('Accès à votre tableau de bord investisseur')
-    const body    = encodeURIComponent(
-      `Bonjour ${inv.nom},\n\nVoici votre lien d'accès à votre tableau de bord investisseur :\n\n${portailUrl(inv.access_token)}\n\nCe lien est valable 1 an.\n\nCordialement`
-    )
-    window.open(`mailto:${inv.email ?? ''}?subject=${subject}&body=${body}`)
+  const handleSendEmail = async (inv: Investisseur) => {
+    if (!inv.email) {
+      alert('Cet investisseur n\'a pas d\'email renseigné.')
+      return
+    }
+    try {
+      await api.post(`/api/investisseurs/${inv.id}/send-report`)
+      alert(`Rapport envoyé à ${inv.email} ✓`)
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Erreur lors de l\'envoi'
+      alert(msg)
+    }
   }
 
   const handleDelete = async (id: string) => {

@@ -82,6 +82,8 @@ function QRModal({ url, titre, onClose }: { url: string; titre: string; onClose:
 function EmailModal({ livret, url, onClose }: { livret: Livret; url: string; onClose: () => void }) {
   const [email, setEmail]           = useState('')
   const [sent, setSent]             = useState(false)
+  const [sending, setSending]       = useState(false)
+  const [sendError, setSendError]   = useState<string | null>(null)
   const [voyageurs, setVoyageurs]   = useState<Voyageur[]>([])
   const [loadingV, setLoadingV]     = useState(true)
   const [voyageurId, setVoyageurId] = useState('')
@@ -108,44 +110,21 @@ function EmailModal({ livret, url, onClose }: { livret: Livret; url: string; onC
     }
   }
 
-  const buildMailto = () => {
-    const prenom = voyageurs.find(v => v.id === voyageurId)?.prenom ?? ''
-    const greeting = prenom ? `Bonjour ${prenom},` : `Bonjour,`
-    const subject = encodeURIComponent(`Votre livret d'accueil — ${livret.titre}`)
-
-    const lines: string[] = [
-      greeting,
-      ``,
-      `Voici votre livret d'accueil pour votre séjour :`,
-      `👉 ${url}`,
-      ``,
-    ]
-    if (livret.wifi_nom) {
-      lines.push(`📶 WiFi : ${livret.wifi_nom}${livret.wifi_mdp ? ` — Mot de passe : ${livret.wifi_mdp}` : ''}`)
-    }
-    if (livret.code_acces) {
-      lines.push(`🔑 Code d'accès : ${livret.code_acces}`)
-    }
-    if (livret.checkin_info) {
-      lines.push(``, `📥 Check-in :`, livret.checkin_info)
-    }
-    if (livret.checkout_info) {
-      lines.push(``, `📤 Check-out :`, livret.checkout_info)
-    }
-    if (livret.contact_urgence) {
-      lines.push(``, `🆘 Contact urgence : ${livret.contact_urgence}`)
-    }
-    lines.push(``, `Bonne installation !`)
-
-    const body = encodeURIComponent(lines.join('\n'))
-    return `mailto:${encodeURIComponent(email)}?subject=${subject}&body=${body}`
-  }
-
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!email.trim()) return
-    window.location.href = buildMailto()
-    setSent(true)
-    setTimeout(() => { setSent(false); onClose() }, 1800)
+    setSending(true)
+    setSendError(null)
+    try {
+      const guestName = voyageurs.find(v => v.id === voyageurId)?.prenom ?? undefined
+      await api.post(`/api/livrets/${livret.id}/send-email`, { to: email, guestName })
+      setSent(true)
+      setTimeout(() => { setSent(false); onClose() }, 1800)
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Erreur lors de l\'envoi'
+      setSendError(msg)
+    } finally {
+      setSending(false)
+    }
   }
 
   const voyageurSelectionne = voyageurs.find(v => v.id === voyageurId)
@@ -225,11 +204,9 @@ function EmailModal({ livret, url, onClose }: { livret: Livret; url: string; onC
             />
           </div>
 
-          {/* Info mailto */}
-          <p className="text-xs text-muted leading-relaxed">
-            Votre client mail s'ouvrira avec un email pré-rédigé contenant le lien du livret
-            {livret.wifi_nom ? ', le WiFi' : ''}{livret.code_acces ? ' et le code d\'accès' : ''}.
-          </p>
+          {sendError && (
+            <p className="text-xs text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{sendError}</p>
+          )}
 
           {/* Actions */}
           <div className="flex gap-2 pt-1">
@@ -241,7 +218,7 @@ function EmailModal({ livret, url, onClose }: { livret: Livret; url: string; onC
             </button>
             <button
               onClick={handleSend}
-              disabled={!email.trim() || sent}
+              disabled={!email.trim() || sent || sending}
               className={`flex-1 flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition-all disabled:opacity-50 ${
                 sent
                   ? 'bg-green-500 text-white'
@@ -249,9 +226,11 @@ function EmailModal({ livret, url, onClose }: { livret: Livret; url: string; onC
               }`}
             >
               {sent ? (
-                <><Check size={14} /> Ouverture…</>
+                <><Check size={14} /> Envoyé !</>
+              ) : sending ? (
+                <><span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> Envoi…</>
               ) : (
-                <><Send size={14} /> Ouvrir dans ma messagerie</>
+                <><Send size={14} /> Envoyer par email</>
               )}
             </button>
           </div>

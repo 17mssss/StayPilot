@@ -193,7 +193,7 @@ export default function Dashboard() {
   })
 
   const platformCounts: Record<string, number> = {}
-  for (const r of reservations) { const p = r.platform || 'other'; platformCounts[p] = (platformCounts[p] ?? 0) + 1 }
+  for (const r of reservations) { const p = (r.platform || 'other').toLowerCase(); platformCounts[p] = (platformCounts[p] ?? 0) + 1 }
   const platformData = Object.entries(platformCounts).map(([name, value]) => ({ name, value }))
 
   const recentRes = [...reservations]

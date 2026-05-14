@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Settings, Eye, EyeOff, CheckCircle, FlaskConical, PlayCircle, Copy, Check, RefreshCw } from 'lucide-react'
+import { Settings, Eye, EyeOff, CheckCircle, FlaskConical, PlayCircle, Copy, Check, RefreshCw, Pencil, X, Save } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { resetTour } from '../components/OnboardingTour'
 import { supabase } from '../lib/supabase'
@@ -126,11 +126,63 @@ function ConciergeCodeSection({
 // ── Page principale ────────────────────────────────────────────────────────────
 
 export default function Parametres() {
-  const { user } = useAuth()
+  const { user, session } = useAuth()
   const [saved, setSaved] = useState(false)
   const [selectedFont, setSelectedFont] = useState<string>(
     () => localStorage.getItem('staypilot_font') ?? 'Inter'
   )
+
+  // ── API Keys (depuis backend) ─────────────────────────────────────────────
+  const [apiKeys, setApiKeys] = useState({
+    sendgrid_api_key: '', sendgrid_from_email: '', sendgrid_from_name: '',
+    twilio_account_sid: '', twilio_auth_token: '', twilio_from_number: '',
+    anthropic_api_key: '',
+    whatsapp_token: '', whatsapp_phone_id: '',
+    airbnb_client_id: '', airbnb_client_secret: '',
+    booking_api_key: '', booking_property_id: '',
+    superhote_api_key: '',
+    stripe_link_pro: '', stripe_link_business: '', stripe_link_enterprise: '',
+  })
+  const [apiKeysSaving, setApiKeysSaving] = useState(false)
+  const [apiKeysMsg, setApiKeysMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
+
+  useEffect(() => {
+    if (!user) return
+    import('../lib/api').then(({ default: api }) => {
+      api.get('/api/settings').then(r => {
+        if (r.data?.data) setApiKeys(prev => ({ ...prev, ...r.data.data }))
+      }).catch(() => {})
+    })
+  }, [user])
+
+  const handleSaveApiKeys = async () => {
+    setApiKeysSaving(true)
+    setApiKeysMsg(null)
+    try {
+      const { default: api } = await import('../lib/api')
+      await api.post('/api/settings', apiKeys)
+      setApiKeysMsg({ type: 'ok', text: 'Clés API sauvegardées ✓' })
+    } catch (e: unknown) {
+      setApiKeysMsg({ type: 'err', text: (e as Error).message ?? 'Erreur' })
+    } finally {
+      setApiKeysSaving(false)
+    }
+  }
+
+  // ── Édition du compte ─────────────────────────────────────────────────────
+  const [editingProfile, setEditingProfile] = useState(false)
+  const [profileFirstName, setProfileFirstName] = useState('')
+  const [profileLastName, setProfileLastName] = useState('')
+  const [profileEmail, setProfileEmail] = useState('')
+  const [profileSaving, setProfileSaving] = useState(false)
+  const [profileMsg, setProfileMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
+
+  const [editingPassword, setEditingPassword] = useState(false)
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showNewPwd, setShowNewPwd] = useState(false)
+  const [pwdSaving, setPwdSaving] = useState(false)
+  const [pwdMsg, setPwdMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
 
   // Profil conciergerie (Supabase)
   const [conciergeProfileId, setConciergeProfileId] = useState<string | null>(null)
@@ -233,8 +285,189 @@ export default function Parametres() {
     setTimeout(() => setSaved(false), 3000)
   }
 
+  const firstName = user?.user_metadata?.first_name ?? ''
+  const lastName  = user?.user_metadata?.last_name  ?? ''
+
+  // Initialiser les champs profil à l'ouverture du mode édition
+  const startEditProfile = () => {
+    setProfileFirstName(firstName)
+    setProfileLastName(lastName)
+    setProfileEmail(user?.email ?? '')
+    setProfileMsg(null)
+    setEditingProfile(true)
+  }
+
+  const handleSaveProfile = async () => {
+    setProfileSaving(true)
+    setProfileMsg(null)
+    try {
+      const updates: Record<string, unknown> = {
+        data: { first_name: profileFirstName, last_name: profileLastName },
+      }
+      if (profileEmail !== user?.email) updates.email = profileEmail
+      const { error } = await supabase.auth.updateUser(updates as Parameters<typeof supabase.auth.updateUser>[0])
+      if (error) throw error
+      setProfileMsg({ type: 'ok', text: profileEmail !== user?.email ? 'Profil mis à jour. Vérifiez votre nouvelle adresse email pour confirmer.' : 'Profil mis à jour ✓' })
+      setEditingProfile(false)
+    } catch (e: unknown) {
+      setProfileMsg({ type: 'err', text: (e as Error).message ?? 'Erreur lors de la mise à jour' })
+    } finally {
+      setProfileSaving(false)
+    }
+  }
+
+  const handleSavePassword = async () => {
+    if (newPassword !== confirmPassword) {
+      setPwdMsg({ type: 'err', text: 'Les mots de passe ne correspondent pas.' })
+      return
+    }
+    if (newPassword.length < 8) {
+      setPwdMsg({ type: 'err', text: 'Le mot de passe doit faire au moins 8 caractères.' })
+      return
+    }
+    setPwdSaving(true)
+    setPwdMsg(null)
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword })
+      if (error) throw error
+      setPwdMsg({ type: 'ok', text: 'Mot de passe mis à jour ✓' })
+      setEditingPassword(false)
+      setNewPassword('')
+      setConfirmPassword('')
+    } catch (e: unknown) {
+      setPwdMsg({ type: 'err', text: (e as Error).message ?? 'Erreur lors de la mise à jour' })
+    } finally {
+      setPwdSaving(false)
+    }
+  }
+
   return (
     <div className="max-w-2xl space-y-5">
+
+      {/* ── Mon compte ── */}
+      <Section title="Mon compte">
+        {!editingProfile ? (
+          <>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-muted mb-1">Prénom</label>
+                <p className="text-sm font-semibold text-dark bg-bg border border-border rounded-lg px-3 py-2.5">
+                  {firstName || <span className="text-muted italic">—</span>}
+                </p>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-muted mb-1">Nom</label>
+                <p className="text-sm font-semibold text-dark bg-bg border border-border rounded-lg px-3 py-2.5">
+                  {lastName || <span className="text-muted italic">—</span>}
+                </p>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-muted mb-1">Email</label>
+              <p className="text-sm font-semibold text-dark bg-bg border border-border rounded-lg px-3 py-2.5 font-mono">
+                {user?.email ?? '—'}
+              </p>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-muted mb-1">Identifiant compte</label>
+              <p className="text-xs text-muted bg-bg border border-border rounded-lg px-3 py-2.5 font-mono truncate">
+                {user?.id ?? '—'}
+              </p>
+            </div>
+            {profileMsg && (
+              <p className={`text-sm ${profileMsg.type === 'ok' ? 'text-green-600' : 'text-red-500'}`}>{profileMsg.text}</p>
+            )}
+            <div className="flex gap-2 pt-1">
+              <button onClick={startEditProfile}
+                className="flex items-center gap-1.5 text-sm text-primary border border-primary/30 rounded-lg px-3 py-2 hover:bg-primary-light transition-colors">
+                <Pencil size={13} /> Modifier le profil
+              </button>
+              <button onClick={() => { setEditingPassword(p => !p); setPwdMsg(null) }}
+                className="flex items-center gap-1.5 text-sm text-muted border border-border rounded-lg px-3 py-2 hover:bg-bg transition-colors">
+                <Eye size={13} /> Changer le mot de passe
+              </button>
+            </div>
+            {editingPassword && (
+              <div className="space-y-3 pt-2 border-t border-border">
+                <div>
+                  <label className="block text-xs font-medium text-muted mb-1">Nouveau mot de passe</label>
+                  <div className="relative">
+                    <input
+                      type={showNewPwd ? 'text' : 'password'}
+                      value={newPassword}
+                      onChange={e => setNewPassword(e.target.value)}
+                      placeholder="8 caractères minimum"
+                      className="w-full border border-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-primary bg-bg text-dark pr-9"
+                    />
+                    <button type="button" onClick={() => setShowNewPwd(v => !v)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted">
+                      {showNewPwd ? <EyeOff size={14} /> : <Eye size={14} />}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-muted mb-1">Confirmer le mot de passe</label>
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={e => setConfirmPassword(e.target.value)}
+                    placeholder="Répétez le mot de passe"
+                    className="w-full border border-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-primary bg-bg text-dark"
+                  />
+                </div>
+                {pwdMsg && (
+                  <p className={`text-sm ${pwdMsg.type === 'ok' ? 'text-green-600' : 'text-red-500'}`}>{pwdMsg.text}</p>
+                )}
+                <div className="flex gap-2">
+                  <button onClick={handleSavePassword} disabled={pwdSaving}
+                    className="flex items-center gap-1.5 text-sm bg-primary text-white rounded-lg px-4 py-2 hover:bg-primary-dark transition-colors disabled:opacity-60">
+                    {pwdSaving ? 'Sauvegarde…' : <><Save size={13} /> Enregistrer</>}
+                  </button>
+                  <button onClick={() => { setEditingPassword(false); setNewPassword(''); setConfirmPassword(''); setPwdMsg(null) }}
+                    className="flex items-center gap-1.5 text-sm text-muted border border-border rounded-lg px-3 py-2 hover:bg-bg">
+                    <X size={13} /> Annuler
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-muted mb-1">Prénom</label>
+                <input value={profileFirstName} onChange={e => setProfileFirstName(e.target.value)}
+                  className="w-full border border-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-primary bg-bg text-dark" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-muted mb-1">Nom</label>
+                <input value={profileLastName} onChange={e => setProfileLastName(e.target.value)}
+                  className="w-full border border-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-primary bg-bg text-dark" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-muted mb-1">Email</label>
+              <input type="email" value={profileEmail} onChange={e => setProfileEmail(e.target.value)}
+                className="w-full border border-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-primary bg-bg text-dark font-mono" />
+              <p className="text-xs text-muted mt-1">Un email de confirmation sera envoyé si vous changez l'adresse.</p>
+            </div>
+            {profileMsg && (
+              <p className={`text-sm ${profileMsg.type === 'ok' ? 'text-green-600' : 'text-red-500'}`}>{profileMsg.text}</p>
+            )}
+            <div className="flex gap-2">
+              <button onClick={handleSaveProfile} disabled={profileSaving}
+                className="flex items-center gap-1.5 text-sm bg-primary text-white rounded-lg px-4 py-2 hover:bg-primary-dark transition-colors disabled:opacity-60">
+                {profileSaving ? 'Sauvegarde…' : <><Save size={13} /> Enregistrer</>}
+              </button>
+              <button onClick={() => { setEditingProfile(false); setProfileMsg(null) }}
+                className="flex items-center gap-1.5 text-sm text-muted border border-border rounded-lg px-3 py-2 hover:bg-bg">
+                <X size={13} /> Annuler
+              </button>
+            </div>
+          </div>
+        )}
+      </Section>
+
       <Section title="Apparence">
         <div>
           <label className="block text-sm font-medium text-dark mb-3">Police d'écriture</label>
@@ -304,14 +537,66 @@ export default function Parametres() {
         </div>
       </Section>
 
-      <Section title="Intégrations">
-        <Field label="Clé API Superhote" value={config.superhoteApiKey} onChange={set('superhoteApiKey')}
-          placeholder="sk-..." secret
-          hint="Disponible dans Superhote → Paramètres → API" />
-        <Field label="Numéro Twilio (SMS/WhatsApp)" value={config.twilioFrom} onChange={set('twilioFrom')}
-          placeholder="+33XXXXXXXXX" hint="Twilio → Phone Numbers" />
-        <Field label="Email expéditeur SendGrid" value={config.sendgridFrom} onChange={set('sendgridFrom')}
-          placeholder="noreply@maconciergerie.fr" hint="Doit être vérifié dans SendGrid" />
+      <Section title="Intégrations & clés API">
+        <p className="text-xs text-muted -mt-1">Ces clés sont stockées de façon sécurisée et ne sont jamais affichées en clair après sauvegarde.</p>
+
+        <div className="border-b border-border pb-4 space-y-3">
+          <p className="text-xs font-semibold text-dark uppercase tracking-wide">📧 SendGrid (emails)</p>
+          <Field label="Clé API SendGrid" value={apiKeys.sendgrid_api_key}
+            onChange={v => setApiKeys(p => ({ ...p, sendgrid_api_key: v }))} secret
+            placeholder="SG.xxxxxxxx" hint="Disponible sur sendgrid.com → Settings → API Keys" />
+          <Field label="Email expéditeur" value={apiKeys.sendgrid_from_email}
+            onChange={v => setApiKeys(p => ({ ...p, sendgrid_from_email: v }))}
+            placeholder="noreply@maconciergerie.fr" hint="Doit être vérifié dans SendGrid" />
+          <Field label="Nom expéditeur" value={apiKeys.sendgrid_from_name}
+            onChange={v => setApiKeys(p => ({ ...p, sendgrid_from_name: v }))}
+            placeholder="Ma Conciergerie" />
+        </div>
+
+        <div className="border-b border-border pb-4 space-y-3">
+          <p className="text-xs font-semibold text-dark uppercase tracking-wide">💬 Twilio (SMS)</p>
+          <Field label="Account SID" value={apiKeys.twilio_account_sid}
+            onChange={v => setApiKeys(p => ({ ...p, twilio_account_sid: v }))} secret placeholder="ACxxxxxxxx" />
+          <Field label="Auth Token" value={apiKeys.twilio_auth_token}
+            onChange={v => setApiKeys(p => ({ ...p, twilio_auth_token: v }))} secret placeholder="xxxxxxxx" />
+          <Field label="Numéro expéditeur" value={apiKeys.twilio_from_number}
+            onChange={v => setApiKeys(p => ({ ...p, twilio_from_number: v }))} placeholder="+33XXXXXXXXX" />
+        </div>
+
+        <div className="border-b border-border pb-4 space-y-3">
+          <p className="text-xs font-semibold text-dark uppercase tracking-wide">🤖 Anthropic / IA</p>
+          <Field label="Clé API Anthropic" value={apiKeys.anthropic_api_key}
+            onChange={v => setApiKeys(p => ({ ...p, anthropic_api_key: v }))} secret
+            placeholder="sk-ant-xxxxxxxx" hint="Disponible sur console.anthropic.com" />
+        </div>
+
+        <div className="border-b border-border pb-4 space-y-3">
+          <p className="text-xs font-semibold text-dark uppercase tracking-wide">🏨 Superhote</p>
+          <Field label="Clé API Superhote" value={apiKeys.superhote_api_key}
+            onChange={v => setApiKeys(p => ({ ...p, superhote_api_key: v }))} secret
+            placeholder="sk-..." hint="Superhote → Paramètres → API" />
+        </div>
+
+        <div className="border-b border-border pb-4 space-y-3">
+          <p className="text-xs font-semibold text-dark uppercase tracking-wide">💳 Stripe (liens de paiement production)</p>
+          <Field label="Lien Stripe — Plan Starter" value={apiKeys.stripe_link_pro}
+            onChange={v => setApiKeys(p => ({ ...p, stripe_link_pro: v }))}
+            placeholder="https://buy.stripe.com/..." hint="Stripe Dashboard → Payment Links" />
+          <Field label="Lien Stripe — Plan Pro" value={apiKeys.stripe_link_business}
+            onChange={v => setApiKeys(p => ({ ...p, stripe_link_business: v }))}
+            placeholder="https://buy.stripe.com/..." />
+          <Field label="Lien Stripe — Plan Business" value={apiKeys.stripe_link_enterprise}
+            onChange={v => setApiKeys(p => ({ ...p, stripe_link_enterprise: v }))}
+            placeholder="https://buy.stripe.com/..." />
+        </div>
+
+        {apiKeysMsg && (
+          <p className={`text-sm ${apiKeysMsg.type === 'ok' ? 'text-green-600' : 'text-red-500'}`}>{apiKeysMsg.text}</p>
+        )}
+        <button onClick={handleSaveApiKeys} disabled={apiKeysSaving}
+          className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white rounded-lg px-5 py-2.5 text-sm font-medium transition-colors disabled:opacity-60">
+          {apiKeysSaving ? 'Sauvegarde…' : 'Sauvegarder les intégrations'}
+        </button>
       </Section>
 
       <Section title="Outils développeur">

@@ -66,7 +66,7 @@ export const PLANS: Record<PlanId, PlanConfig> = {
       whiteLabel: false,
       inboxIA: false,
     },
-    stripeLink: 'https://buy.stripe.com/test_fZubJ34CN8iraqx0se6Vq00',
+    stripeLink: import.meta.env.VITE_STRIPE_LINK_STARTER ?? 'https://buy.stripe.com/test_fZubJ34CN8iraqx0se6Vq00',
   },
   pro: {
     id: 'pro',
@@ -96,7 +96,7 @@ export const PLANS: Record<PlanId, PlanConfig> = {
       whiteLabel: false,
       inboxIA: false,
     },
-    stripeLink: 'https://buy.stripe.com/test_8x2fZjb1b8ir8ip7UG6Vq01',
+    stripeLink: import.meta.env.VITE_STRIPE_LINK_PRO ?? 'https://buy.stripe.com/test_8x2fZjb1b8ir8ip7UG6Vq01',
   },
   business: {
     id: 'business',
@@ -126,7 +126,7 @@ export const PLANS: Record<PlanId, PlanConfig> = {
       whiteLabel: true,
       inboxIA: true,
     },
-    stripeLink: 'https://buy.stripe.com/test_4gMaEZedn56f56d2Am6Vq02',
+    stripeLink: import.meta.env.VITE_STRIPE_LINK_BUSINESS ?? 'https://buy.stripe.com/test_4gMaEZedn56f56d2Am6Vq02',
   },
 }
 
