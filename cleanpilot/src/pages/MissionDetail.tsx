@@ -2,10 +2,12 @@ import React, { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft, MapPin, Clock, CheckSquare, Square,
-  Camera, Trash2, Play, CheckCircle2, Loader2,
+  Camera, Trash2, CheckCircle2, Loader2,
   AlertTriangle, Home, ChevronRight, ChevronDown,
 } from 'lucide-react'
 import api from '../lib/api'
+import { supabase } from '../lib/supabase'
+import { useAuth } from '../contexts/AuthContext'
 import type { Mission, ChecklistItem } from './MissionsToday'
 
 const TYPE_LABELS: Record<string, string> = {
@@ -54,6 +56,7 @@ function getMockMission(id: string): Mission {
 export default function MissionDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { agent } = useAuth()
 
   const [mission, setMission] = useState<Mission | null>(null)
   const [checklist, setChecklist] = useState<ChecklistItem[]>([])
@@ -71,11 +74,20 @@ export default function MissionDetail() {
       .then(r => {
         setMission(r.data)
         setChecklist(r.data.checklist ?? [])
+        // Auto-démarrer le timer si la mission n'est pas déjà terminée
+        if (r.data.status !== 'done') {
+          setStartTime(new Date())
+          if (!r.data.id.startsWith('mock')) {
+            api.patch(`/api/menage/${r.data.id}`, { status: 'in_progress' }).catch(() => {})
+          }
+        }
       })
       .catch(() => {
         const mock = getMockMission(id)
         setMission(mock)
         setChecklist(mock.checklist ?? [])
+        // Auto-démarrer même en mode mock
+        if (mock.status !== 'done') setStartTime(new Date())
       })
       .finally(() => setLoading(false))
   }, [id])
@@ -101,12 +113,29 @@ export default function MissionDetail() {
     setChecklist(prev => prev.map(c => c.id === itemId ? { ...c, done: !c.done } : c))
   }
 
-  const handleStart = async () => {
-    setStartTime(new Date())
-    if (mission && !mission.id.startsWith('mock')) {
-      await api.patch(`/api/menage/${mission.id}`, { status: 'in_progress' }).catch(() => {})
+  // Upload des photos vers Supabase Storage
+  const uploadPhotos = async (): Promise<string[]> => {
+    if (photos.length === 0) return []
+    const urls: string[] = []
+    for (const dataUrl of photos) {
+      try {
+        // Convertir base64 en Blob
+        const res = await fetch(dataUrl)
+        const blob = await res.blob()
+        const ext = blob.type.includes('png') ? 'png' : 'jpg'
+        const path = `${mission!.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+
+        const { data, error } = await supabase.storage
+          .from('mission-photos')
+          .upload(path, blob, { contentType: blob.type, upsert: false })
+
+        if (!error && data) {
+          const { data: urlData } = supabase.storage.from('mission-photos').getPublicUrl(data.path)
+          if (urlData?.publicUrl) urls.push(urlData.publicUrl)
+        }
+      } catch { /* ignorer les erreurs d'upload individuelles */ }
     }
-    setMission(m => m ? { ...m, status: 'in_progress' } : m)
+    return urls
   }
 
   const handleComplete = async () => {
@@ -119,14 +148,32 @@ export default function MissionDetail() {
       if (!ok) { setSaving(false); return }
     }
     try {
+      // Upload des photos en parallèle
+      const photoUrls = await uploadPhotos()
+
       if (!mission.id.startsWith('mock')) {
         await api.patch(`/api/menage/${mission.id}`, {
           status: 'done',
           checklist,
           completed_at: new Date().toISOString(),
           duration_actual: elapsed > 0 ? Math.ceil(elapsed / 60) : undefined,
-        })
+          photo_urls: photoUrls.length > 0 ? photoUrls : undefined,
+        }).catch(() => {})
       }
+
+      // Notifier le concierge via Supabase
+      if (agent?.concierge_id) {
+        supabase.from('concierge_notifications').insert({
+          concierge_id: agent.concierge_id,
+          type: 'mission_done',
+          title: 'Mission terminée ✓',
+          body: `${agent.full_name} a terminé le ménage de « ${mission.logement_name} »${photoUrls.length > 0 ? ` (${photoUrls.length} photo${photoUrls.length > 1 ? 's' : ''})` : ''}`,
+          logement_name: mission.logement_name,
+          agent_name: agent.full_name,
+          mission_id: mission.id,
+        }).then(() => {}, () => {})
+      }
+
       setMission(m => m ? { ...m, status: 'done' } : m)
       navigate('/', { replace: true })
     } catch {
@@ -175,9 +222,9 @@ export default function MissionDetail() {
   const isDone = mission.status === 'done'
 
   return (
-    <div className="flex flex-col min-h-screen bg-bg safe-top safe-bottom">
+    <div className="flex flex-col bg-bg safe-top" style={{ height: '100dvh' }}>
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-surface border-b border-border px-4 py-3">
+      <div className="flex-shrink-0 bg-surface border-b border-border px-4 py-3">
         <div className="flex items-center gap-3">
           <button onClick={() => navigate(-1)}
             className="w-9 h-9 rounded-xl bg-bg border border-border flex items-center justify-center active:scale-95">
@@ -205,8 +252,8 @@ export default function MissionDetail() {
         </div>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto pb-32">
+      {/* Content — scrollable zone */}
+      <div className="flex-1 overflow-y-auto pb-6">
         {/* Info card */}
         <div className="mx-4 mt-4 bg-surface rounded-2xl shadow-card p-4 space-y-2">
           {mission.address && (
@@ -340,30 +387,24 @@ export default function MissionDetail() {
         </div>
       </div>
 
-      {/* Bottom action bar */}
+      {/* Bouton Terminer — élément normal du flux, toujours visible */}
       {!isDone && (
-        <div className="fixed bottom-0 left-0 right-0 bg-surface border-t border-border px-4 py-3 safe-bottom">
-          {!startTime ? (
-            <button
-              onClick={handleStart}
-              className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-primary text-white font-bold text-base active:scale-[0.98]"
-            >
-              <Play size={18} /> Commencer la mission
-            </button>
-          ) : (
-            <button
-              onClick={handleComplete}
-              disabled={saving}
-              className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-success text-white font-bold text-base active:scale-[0.98] disabled:opacity-60"
-            >
-              {saving
-                ? <><Loader2 size={18} className="animate-spin" /> Sauvegarde…</>
-                : <><CheckCircle2 size={18} /> Marquer comme terminée</>
-              }
-            </button>
-          )}
+        <div className="flex-shrink-0 bg-surface border-t border-border px-4 py-3">
+          <button
+            onClick={handleComplete}
+            disabled={saving}
+            className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-success text-white font-bold text-base active:scale-[0.98] disabled:opacity-60"
+          >
+            {saving
+              ? <><Loader2 size={18} className="animate-spin" /> Envoi en cours…</>
+              : <><CheckCircle2 size={18} /> Terminer &amp; envoyer</>
+            }
+          </button>
         </div>
       )}
+
+      {/* Spacer pour le nav bar fixe en bas */}
+      <div className="flex-shrink-0" style={{ height: 'calc(3.5rem + env(safe-area-inset-bottom, 0px))' }} />
     </div>
   )
 }
