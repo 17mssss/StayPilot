@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import {
   BrowserRouter,
   Routes,
@@ -34,6 +34,10 @@ import {
   Wrench,
   Zap,
   Rss,
+  FileText,
+  Bell,
+  CheckCheck,
+  BrushIcon,
 } from 'lucide-react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { PlanProvider, usePlan } from './contexts/PlanContext'
@@ -66,6 +70,273 @@ import ChannelManager from './pages/ChannelManager'
 import Investisseurs from './pages/Investisseurs'
 import PortailInvestisseur from './pages/PortailInvestisseur'
 import EquipeMenage from './pages/EquipeMenage'
+import ExportFEC from './pages/ExportFEC'
+
+// ── Toast notification ────────────────────────────────────────────────────────
+function AgentToast({ name, onClose }: { name: string; onClose: () => void }) {
+  useEffect(() => {
+    const t = setTimeout(onClose, 5000)
+    return () => clearTimeout(t)
+  }, [onClose])
+
+  return (
+    <div
+      className="fixed top-4 right-4 z-[9999] flex items-center gap-3 bg-surface border border-border rounded-xl shadow-lg px-4 py-3 animate-slide-in"
+      style={{ animation: 'slideInRight 0.3s ease' }}
+    >
+      <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
+        <Users2 size={15} className="text-orange-500" />
+      </div>
+      <div>
+        <p className="text-xs font-semibold text-dark">Nouvelle demande d'accès</p>
+        <p className="text-xs text-muted">{name} souhaite rejoindre votre équipe</p>
+      </div>
+      <button onClick={onClose} className="ml-2 text-muted hover:text-dark">
+        <X size={13} />
+      </button>
+      {/* Barre de progression */}
+      <div className="absolute bottom-0 left-0 right-0 h-0.5 rounded-b-xl bg-orange-200 overflow-hidden">
+        <div className="h-full bg-orange-400" style={{ animation: 'shrink 5s linear forwards' }} />
+      </div>
+    </div>
+  )
+}
+
+// ── Polling des agents en attente ─────────────────────────────────────────────
+function usePendingAgents(userId: string | null, jwt: string | null = null) {
+  const [count, setCount] = useState(0)
+  const [toasts, setToasts] = useState<{ id: number; name: string }[]>()
+  const prevCountRef = useRef<number | null>(null)
+  const lastNamesRef = useRef<string[]>([])
+  const toastId = useRef(0)
+
+  const poll = useCallback(async () => {
+    if (!userId) return
+    const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string
+    const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string
+    const bearer = jwt ?? SUPABASE_KEY
+    try {
+      // Trouver le concierge_id pour ce user
+      const cpRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/concierge_profiles?select=id&user_id=eq.${userId}&limit=1`,
+        { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${bearer}` } }
+      )
+      const cpRows = await cpRes.json()
+      if (!cpRes.ok || !Array.isArray(cpRows) || cpRows.length === 0) return
+      const conciergeId = cpRows[0].id
+
+      // Compter les agents en attente
+      const agRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/cleaning_agents?select=id,full_name&concierge_id=eq.${conciergeId}&status=eq.pending`,
+        { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${bearer}`, Prefer: 'count=exact' } }
+      )
+      const agRows = await agRes.json()
+      if (!agRes.ok || !Array.isArray(agRows)) return
+      const newCount = agRows.length
+      const newNames = agRows.map((r: { full_name: string }) => r.full_name)
+
+      setCount(newCount)
+
+      // Détecter les nouveaux agents (par rapport au dernier poll)
+      if (prevCountRef.current !== null && newCount > prevCountRef.current) {
+        const prev = lastNamesRef.current
+        const added = newNames.filter((n: string) => !prev.includes(n))
+        added.forEach((name: string) => {
+          const id = ++toastId.current
+          setToasts(ts => [...(ts ?? []), { id, name }])
+        })
+      }
+
+      prevCountRef.current = newCount
+      lastNamesRef.current = newNames
+    } catch {
+      // silencieux
+    }
+  }, [userId, jwt])
+
+  useEffect(() => {
+    if (!userId) return
+    poll()
+    const interval = setInterval(poll, 20000) // toutes les 20s
+    return () => clearInterval(interval)
+  }, [poll, userId])
+
+  const dismissToast = useCallback((id: number) => {
+    setToasts(ts => (ts ?? []).filter(t => t.id !== id))
+  }, [])
+
+  return { count, toasts: toasts ?? [], dismissToast }
+}
+
+// ── Notifs missions CleanPilot ────────────────────────────────────────────────
+interface CleaningNotif {
+  id: string
+  title: string
+  body: string | null
+  agent_name: string | null
+  logement_name: string | null
+  is_read: boolean
+  created_at: string
+}
+
+function useCleaningNotifications(userId: string | null, jwt: string | null = null) {
+  const [notifs, setNotifs]   = useState<CleaningNotif[]>([])
+  const [unread, setUnread]   = useState(0)
+  const conciergeIdRef        = useRef<string | null>(null)
+
+  const poll = useCallback(async () => {
+    if (!userId) return
+    const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string
+    const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string
+    const bearer  = jwt ?? SUPABASE_KEY
+    const headers = { apikey: SUPABASE_KEY, Authorization: `Bearer ${bearer}` }
+
+    try {
+      // Résoudre le concierge_id (une seule fois)
+      if (!conciergeIdRef.current) {
+        const cpRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/concierge_profiles?select=id&user_id=eq.${userId}&limit=1`,
+          { headers }
+        )
+        const cpRows = await cpRes.json()
+        if (!cpRes.ok || !Array.isArray(cpRows) || cpRows.length === 0) return
+        conciergeIdRef.current = cpRows[0].id
+      }
+
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/concierge_notifications?select=*&concierge_id=eq.${conciergeIdRef.current}&order=created_at.desc&limit=20`,
+        { headers }
+      )
+      const rows: CleaningNotif[] = await res.json()
+      if (!res.ok || !Array.isArray(rows)) return
+      setNotifs(rows)
+      setUnread(rows.filter(n => !n.is_read).length)
+    } catch { /* silencieux */ }
+  }, [userId, jwt])
+
+  useEffect(() => {
+    if (!userId) return
+    poll()
+    const interval = setInterval(poll, 30000)
+    return () => clearInterval(interval)
+  }, [poll, userId])
+
+  const markAllRead = useCallback(async () => {
+    if (!conciergeIdRef.current) return
+    const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string
+    const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string
+    const bearer  = jwt ?? SUPABASE_KEY
+    try {
+      await fetch(
+        `${SUPABASE_URL}/rest/v1/concierge_notifications?concierge_id=eq.${conciergeIdRef.current}&is_read=eq.false`,
+        {
+          method: 'PATCH',
+          headers: {
+            apikey: SUPABASE_KEY,
+            Authorization: `Bearer ${bearer}`,
+            'Content-Type': 'application/json',
+            Prefer: 'return=minimal',
+          },
+          body: JSON.stringify({ is_read: true }),
+        }
+      )
+      setNotifs(prev => prev.map(n => ({ ...n, is_read: true })))
+      setUnread(0)
+    } catch { /* silencieux */ }
+  }, [jwt])
+
+  return { notifs, unread, markAllRead, refetch: poll }
+}
+
+// ── Panneau de notifications ──────────────────────────────────────────────────
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime()
+  const min  = Math.floor(diff / 60000)
+  if (min < 1)  return 'à l\'instant'
+  if (min < 60) return `il y a ${min} min`
+  const h = Math.floor(min / 60)
+  if (h < 24)   return `il y a ${h}h`
+  return `il y a ${Math.floor(h / 24)}j`
+}
+
+function NotifDropdown({
+  notifs,
+  unread,
+  onMarkAll,
+  onClose,
+}: {
+  notifs: CleaningNotif[]
+  unread: number
+  onMarkAll: () => void
+  onClose: () => void
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose()
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [onClose])
+
+  return (
+    <div
+      ref={ref}
+      className="absolute right-0 top-full mt-2 w-80 bg-surface border border-border rounded-2xl shadow-lg z-[9999] overflow-hidden"
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+        <p className="text-sm font-semibold text-dark">
+          Notifications
+          {unread > 0 && (
+            <span className="ml-2 text-xs bg-red-500 text-white font-bold px-1.5 py-0.5 rounded-full">
+              {unread}
+            </span>
+          )}
+        </p>
+        {unread > 0 && (
+          <button
+            onClick={onMarkAll}
+            className="flex items-center gap-1 text-xs text-primary hover:text-primary-dark font-medium"
+          >
+            <CheckCheck size={13} /> Tout lire
+          </button>
+        )}
+      </div>
+
+      {/* Liste */}
+      <div className="max-h-72 overflow-y-auto">
+        {notifs.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-8 gap-2 text-muted">
+            <Bell size={28} className="opacity-30" />
+            <p className="text-xs">Aucune notification</p>
+          </div>
+        ) : (
+          notifs.map(n => (
+            <div
+              key={n.id}
+              className={`flex items-start gap-3 px-4 py-3 border-b border-border last:border-0 ${
+                n.is_read ? 'opacity-60' : 'bg-primary/5'
+              }`}
+            >
+              <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <BrushIcon size={14} className="text-green-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-dark">{n.title}</p>
+                {n.body && <p className="text-xs text-muted mt-0.5 leading-relaxed">{n.body}</p>}
+                <p className="text-[10px] text-muted mt-1">{timeAgo(n.created_at)}</p>
+              </div>
+              {!n.is_read && (
+                <div className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0 mt-1.5" />
+              )}
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  )
+}
 
 // ── Navigation config ─────────────────────────────────────────────────────────
 // Sections épurées — 4 groupes logiques
@@ -131,6 +402,7 @@ const navSections: NavSection[] = [
     label: 'Enterprise',
     items: [
       { name: 'Portail Investisseur', path: '/investisseurs', icon: TrendingUp },
+      { name: 'Export FEC',           path: '/export-fec',    icon: FileText   },
     ],
   },
 ]
@@ -161,6 +433,7 @@ const titleMap: Record<string, string> = {
   '/abonnement':                'Abonnement',
   '/inbox':                     'Inbox Unifié',
   '/investisseurs':             'Portail Investisseur',
+  '/export-fec':                'Export FEC',
 }
 
 // ── Mobile bottom navigation ──────────────────────────────────────────────────
@@ -172,7 +445,7 @@ const mobileNavItems = [
   { name: 'Plus',         path: null,            icon: Menu },
 ] as const
 
-function MobileNav() {
+function MobileNav({ pendingCount = 0 }: { pendingCount?: number }) {
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = React.useState(false)
 
@@ -182,7 +455,7 @@ function MobileNav() {
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/40" onClick={() => setSidebarOpen(false)} />
           <div className="relative z-10 h-full w-fit">
-            <Sidebar onClose={() => setSidebarOpen(false)} />
+            <Sidebar onClose={() => setSidebarOpen(false)} pendingCount={pendingCount} />
           </div>
         </div>
       )}
@@ -249,11 +522,13 @@ function SidebarNavItem({
   onClose,
   factOpen,
   setFactOpen,
+  badgeCount = 0,
 }: {
   item: NavItem
   onClose?: () => void
   factOpen: boolean
   setFactOpen: (v: boolean) => void
+  badgeCount?: number
 }) {
   const { canUse } = usePlan()
   const location = useLocation()
@@ -320,11 +595,16 @@ function SidebarNavItem({
           Pro
         </span>
       )}
+      {badgeCount > 0 && (
+        <span className="min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0">
+          {badgeCount > 9 ? '9+' : badgeCount}
+        </span>
+      )}
     </NavLink>
   )
 }
 
-function Sidebar({ onClose }: { onClose?: () => void }) {
+function Sidebar({ onClose, pendingCount = 0 }: { onClose?: () => void; pendingCount?: number }) {
   const { logout } = useAuth()
   const { plan, planId } = usePlan()
   const navigate = useNavigate()
@@ -366,6 +646,7 @@ function Sidebar({ onClose }: { onClose?: () => void }) {
                   onClose={onClose}
                   factOpen={factOpen}
                   setFactOpen={setFactOpen}
+                  badgeCount={item.path === '/equipe-menage' ? pendingCount : 0}
                 />
               ))}
             </div>
@@ -425,12 +706,15 @@ function Sidebar({ onClose }: { onClose?: () => void }) {
 
 // ── Layout ────────────────────────────────────────────────────────────────────
 function Layout() {
-  const { user, loading } = useAuth()
+  const { user, session, loading } = useAuth()
   const [dark, setDark] = useState(() => {
     const saved = localStorage.getItem('theme-admin')
     return saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches
   })
+  const [notifOpen, setNotifOpen] = useState(false)
   const location = useLocation()
+  const { count: pendingCount, toasts, dismissToast } = usePendingAgents(user?.id ?? null, session?.access_token ?? null)
+  const { notifs, unread, markAllRead } = useCleaningNotifications(user?.id ?? null, session?.access_token ?? null)
 
   React.useEffect(() => {
     document.documentElement.classList.toggle('dark', dark)
@@ -453,14 +737,42 @@ function Layout() {
     <div className="flex bg-bg overflow-hidden" style={{ height: '100dvh' }}>
       {/* Desktop sidebar */}
       <div className="hidden lg:flex flex-shrink-0">
-        <Sidebar />
+        <Sidebar pendingCount={pendingCount} />
       </div>
 
       {/* Main area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Header — minimal Apple/Claude style, hauteur identique à la sidebar */}
+        {/* Header */}
         <header className="flex items-center h-14 px-4 sm:px-6 bg-surface border-b border-border flex-shrink-0 z-40">
           <h1 className="text-sm font-semibold text-dark flex-1 truncate tracking-tight">{title}</h1>
+
+          {/* Cloche de notifications CleanPilot */}
+          <div className="relative mr-1">
+            <button
+              onClick={() => {
+                const opening = !notifOpen
+                setNotifOpen(opening)
+                if (opening && unread > 0) markAllRead()
+              }}
+              className="relative w-8 h-8 rounded-lg flex items-center justify-center text-muted hover:text-dark hover:bg-bg transition-colors"
+            >
+              <Bell size={15} />
+              {unread > 0 && (
+                <span className="absolute top-0.5 right-0.5 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                  {unread > 9 ? '9+' : unread}
+                </span>
+              )}
+            </button>
+            {notifOpen && (
+              <NotifDropdown
+                notifs={notifs}
+                unread={unread}
+                onMarkAll={markAllRead}
+                onClose={() => setNotifOpen(false)}
+              />
+            )}
+          </div>
+
           <button
             onClick={() => setDark(d => !d)}
             className="w-8 h-8 rounded-lg flex items-center justify-center text-muted hover:text-dark hover:bg-bg transition-colors"
@@ -469,7 +781,7 @@ function Layout() {
           </button>
         </header>
 
-        {/* Page content — seul élément qui défile */}
+        {/* Page content */}
         <main className="flex-1 overflow-y-auto overscroll-y-contain">
           <div className="px-3 sm:px-6 py-4 sm:py-6 page-content">
             <Outlet />
@@ -478,10 +790,19 @@ function Layout() {
       </div>
 
       {/* Mobile bottom navigation */}
-      <MobileNav />
+      <MobileNav pendingCount={pendingCount} />
 
       {/* Tour d'onboarding */}
       <OnboardingTour />
+
+      {/* Toast notifications agents en attente */}
+      <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none">
+        {toasts.map(t => (
+          <div key={t.id} className="pointer-events-auto">
+            <AgentToast name={t.name} onClose={() => dismissToast(t.id)} />
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -529,6 +850,7 @@ function AppRoutes() {
         <Route path="/abonnement"              element={<Abonnement />} />
         <Route path="/investisseurs"           element={<Investisseurs />} />
         <Route path="/equipe-menage"           element={<EquipeMenage />} />
+        <Route path="/export-fec"              element={<ExportFEC />} />
         <Route path="/factures"                element={<Navigate to="/facturation/historique" replace />} />
       </Route>
 

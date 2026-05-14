@@ -2,7 +2,7 @@ import React from 'react'
 import {
   BrowserRouter, Routes, Route, Navigate, NavLink, Outlet, useNavigate,
 } from 'react-router-dom'
-import { Home, Calendar } from 'lucide-react'
+import { Home, Calendar, User } from 'lucide-react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -10,6 +10,7 @@ import MissionsToday from './pages/MissionsToday'
 import MissionDetail from './pages/MissionDetail'
 import Planning from './pages/Planning'
 import PendingApproval from './pages/PendingApproval'
+import Profil from './pages/Profil'
 import './index.css'
 
 // ── Barre de navigation basse ─────────────────────────────────────────────────
@@ -40,6 +41,17 @@ function BottomNav() {
         >
           <Calendar size={20} />
           <span className="text-[10px] font-medium">Planning</span>
+        </NavLink>
+        <NavLink
+          to="/profil"
+          className={({ isActive }) =>
+            `flex flex-col items-center gap-0.5 px-6 py-2 transition-colors ${
+              isActive ? 'text-primary' : 'text-muted'
+            }`
+          }
+        >
+          <User size={20} />
+          <span className="text-[10px] font-medium">Profil</span>
         </NavLink>
       </div>
     </nav>
@@ -72,10 +84,10 @@ function Layout() {
 // ── Routeur principal ─────────────────────────────────────────────────────────
 
 function AppRoutes() {
-  const { user, agent, loading, agentLoading } = useAuth()
+  const { user, agent, loading } = useAuth()
 
   // Attendre la résolution de l'auth et du profil agent
-  if (loading || (user && agentLoading)) return <Spinner />
+  if (loading) return <Spinner />
 
   // ── Utilisateur non connecté ──
   if (!user) {
@@ -112,6 +124,7 @@ function AppRoutes() {
         <Route index                       element={<MissionsToday />} />
         <Route path="/missions/:id"        element={<MissionDetail />} />
         <Route path="/planning"            element={<Planning />} />
+        <Route path="/profil"              element={<Profil />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
