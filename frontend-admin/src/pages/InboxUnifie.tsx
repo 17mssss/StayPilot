@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import {
   Search, Send, Sparkles, Settings, X, Zap,
-  ChevronRight, CheckCheck, AlertTriangle, Plus, Loader2,
+  ChevronRight, CheckCheck, AlertTriangle, Plus, Loader2, FlaskConical,
 } from 'lucide-react'
 import FeatureGate from '../components/FeatureGate'
 import api from '../lib/api'
@@ -257,15 +257,18 @@ export default function InboxUnifie() {
       {/* Étire sur toute la hauteur disponible, déborde des paddings de la page */}
       <div className="flex flex-col -mx-3 sm:-mx-6 -my-4 sm:-my-6" style={{ height: 'calc(100dvh - 3.5rem)' }}>
 
-        {/* Banner API */}
+        {/* Banner Bêta + API */}
         <div className="flex items-center gap-3 px-5 py-2 bg-amber-50 dark:bg-amber-950/20 border-b border-amber-200 dark:border-amber-800 flex-shrink-0">
-          <AlertTriangle size={13} className="text-amber-500 flex-shrink-0" />
-          <p className="text-xs text-amber-700 dark:text-amber-400 flex-1">
-            <strong>Mode démo</strong> — Branchez vos clés API pour envoyer et recevoir de vrais messages.
-          </p>
+          <FlaskConical size={13} className="text-amber-500 flex-shrink-0" />
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/40 px-1.5 py-0.5 rounded flex-shrink-0">BÊTA</span>
+            <p className="text-xs text-amber-700 dark:text-amber-400 truncate">
+              <strong>Connexions API en cours de déploiement</strong> — Les canaux seront activés progressivement. Branchez vos clés pour les activer.
+            </p>
+          </div>
           <button onClick={() => setShowSetup(true)}
             className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 dark:text-amber-400 hover:underline flex-shrink-0">
-            <Settings size={12} /> Configurer les canaux
+            <Settings size={12} /> Configurer
           </button>
         </div>
 
@@ -278,6 +281,7 @@ export default function InboxUnifie() {
             <div className="flex items-center justify-between px-5 pt-5 pb-3">
               <div className="flex items-baseline gap-2">
                 <h2 className="text-lg font-bold text-dark tracking-tight">Chats</h2>
+                <span className="text-[9px] font-bold text-violet-600 bg-violet-100 px-1.5 py-0.5 rounded uppercase tracking-wide">Bêta</span>
                 {totalUnread > 0 && (
                   <span className="text-xs font-bold bg-primary text-white rounded-full px-1.5 py-0.5 leading-none">
                     {totalUnread}

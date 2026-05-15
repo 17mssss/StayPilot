@@ -157,7 +157,7 @@ async function generateInvoicePDF(data) {
   } = data;
 
   const companyName  = process.env.CLIENT_NAME    || 'StayPilot';
-  const companyEmail = process.env.SENDGRID_FROM_EMAIL || 'contact@staypilot.fr';
+  const companyEmail = process.env.SENDGRID_FROM_EMAIL || 'contact@staypilot.cc';
   const companyPhone = process.env.CLIENT_PHONE   || '';
   const companyAddr  = process.env.CLIENT_ADDRESS || '';
   const companySiret = process.env.CLIENT_SIRET   || '';
@@ -315,7 +315,7 @@ async function generateRelevePDF(data) {
   } = data;
 
   const companyName  = process.env.CLIENT_NAME          || 'StayPilot';
-  const companyEmail = process.env.SENDGRID_FROM_EMAIL  || 'contact@staypilot.fr';
+  const companyEmail = process.env.SENDGRID_FROM_EMAIL  || 'contact@staypilot.cc';
   const companyAddr  = process.env.CLIENT_ADDRESS       || '';
   const companySiret = process.env.CLIENT_SIRET         || '';
   const commRate     = parseFloat(process.env.CLIENT_COMMISSION_RATE ?? '20');

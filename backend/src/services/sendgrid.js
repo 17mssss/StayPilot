@@ -24,7 +24,7 @@ async function sendEmail(to, subject, text, html = null, attachments = []) {
   const msg = {
     to,
     from: {
-      email: process.env.SENDGRID_FROM_EMAIL || process.env.SENDGRID_FROM || 'noreply@staypilot.fr',
+      email: process.env.SENDGRID_FROM_EMAIL || process.env.SENDGRID_FROM || 'noreply@staypilot.cc',
       name:  process.env.SENDGRID_FROM_NAME  || 'StayPilot',
     },
     subject,

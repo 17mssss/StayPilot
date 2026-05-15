@@ -43,6 +43,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { PlanProvider, usePlan } from './contexts/PlanContext'
 import type { PlanConfig } from './contexts/PlanContext'
 import OnboardingTour from './components/OnboardingTour'
+import OnboardingWizard from './components/OnboardingWizard'
 import PlanBadge from './components/PlanBadge'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -792,8 +793,11 @@ function Layout() {
       {/* Mobile bottom navigation */}
       <MobileNav pendingCount={pendingCount} />
 
-      {/* Tour d'onboarding */}
+      {/* Tour d'onboarding (guide interface) */}
       <OnboardingTour />
+
+      {/* Wizard de démarrage (premier login sans logement) */}
+      <OnboardingWizard />
 
       {/* Toast notifications agents en attente */}
       <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none">

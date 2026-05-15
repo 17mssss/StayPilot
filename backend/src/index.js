@@ -32,6 +32,8 @@ const authDeviceRoutes      = require('./routes/auth-device');
 const reportsRoutes         = require('./routes/reports');
 const channelsRoutes        = require('./routes/channels');
 const { investisseursRouter, portailRouter } = require('./routes/investisseurs');
+const inboxRoutes    = require('./routes/inbox');
+const settingsRoutes = require('./routes/settings');
 
 // Services cron
 const { startPolling }           = require('./services/superhote');
@@ -58,9 +60,14 @@ const ALLOWED_ORIGINS = [
   process.env.FRONTEND_ADMIN_URL,
   process.env.FRONTEND_OWNER_URL,
   process.env.FRONTEND_URL,
+  process.env.FRONTEND_CLEANPILOT_URL,
   'https://staypilot.cc',
   'https://www.staypilot.cc',
+  'https://app.staypilot.cc',
+  'https://proprio.staypilot.cc',
+  'https://cleanpilot.staypilot.cc',   // domaine custom CleanPilot
   'https://frontend-admin-neon-nine.vercel.app',
+  'https://cleanpilot-xi.vercel.app',  // ancien domaine Vercel (conservé en fallback)
   'http://localhost:3000',
   'http://localhost:3002',
   'http://localhost:3003',
@@ -142,8 +149,28 @@ app.use('/api/reports',          reportsRoutes);
 app.use('/api/channels',         channelsRoutes);
 app.use('/api/investisseurs',    investisseursRouter);
 app.use('/api/portail',          portailRouter);
+app.use('/api/inbox',            inboxRoutes);
+app.use('/api/settings',         settingsRoutes);
 // Double auth — pas de middleware authenticate (appelé avant la session)
 app.use('/api/auth',              strictLimiter, authDeviceRoutes);
+
+// ── Route de test email (dev/staging uniquement) ──────────────────────────────
+if (process.env.NODE_ENV !== 'production') {
+  const { sendEmail } = require('./services/sendgrid');
+  app.post('/api/test-email', async (req, res) => {
+    const { to = 'test@staypilot.cc', subject = 'Test email StayPilot', html } = req.body;
+    try {
+      await sendEmail(
+        to, subject,
+        'Ceci est un email de test StayPilot.',
+        html || `<h2>Test email StayPilot</h2><p>Si vous recevez cet email, la configuration SendGrid est opérationnelle.</p><p>Expéditeur : ${process.env.SENDGRID_FROM_EMAIL || 'noreply@staypilot.cc'}</p>`
+      );
+      res.json({ ok: true, to, subject });
+    } catch (err) {
+      res.status(500).json({ ok: false, error: err.message });
+    }
+  });
+}
 
 // Routes coûteuses avec rate limit strict (email, SMS, IA)
 app.use('/api/invoices/:id/send',           strictLimiter);
