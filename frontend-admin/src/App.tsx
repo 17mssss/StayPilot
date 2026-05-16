@@ -40,10 +40,13 @@ import {
   BrushIcon,
 } from 'lucide-react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { DemoProvider, useDemo } from './contexts/DemoContext'
 import { PlanProvider, usePlan } from './contexts/PlanContext'
 import type { PlanConfig } from './contexts/PlanContext'
 import OnboardingTour from './components/OnboardingTour'
 import OnboardingWizard from './components/OnboardingWizard'
+import DemoBanner from './components/DemoBanner'
+import DemoUpgradeModal from './components/DemoUpgradeModal'
 import PlanBadge from './components/PlanBadge'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -72,6 +75,7 @@ import Investisseurs from './pages/Investisseurs'
 import PortailInvestisseur from './pages/PortailInvestisseur'
 import EquipeMenage from './pages/EquipeMenage'
 import ExportFEC from './pages/ExportFEC'
+import Demo from './pages/Demo'
 
 // ── Toast notification ────────────────────────────────────────────────────────
 function AgentToast({ name, onClose }: { name: string; onClose: () => void }) {
@@ -608,6 +612,7 @@ function SidebarNavItem({
 function Sidebar({ onClose, pendingCount = 0 }: { onClose?: () => void; pendingCount?: number }) {
   const { logout } = useAuth()
   const { plan, planId } = usePlan()
+  const { isDemo, exitDemo, triggerUpgrade } = useDemo()
   const navigate = useNavigate()
   const location = useLocation()
   const [factOpen, setFactOpen] = useState(location.pathname.startsWith('/facturation'))
@@ -615,6 +620,11 @@ function Sidebar({ onClose, pendingCount = 0 }: { onClose?: () => void; pendingC
   const handleLogout = async () => {
     await logout()
     navigate('/login')
+  }
+
+  const handleExitDemo = () => {
+    exitDemo()
+    navigate('/login', { replace: true })
   }
 
   return (
@@ -657,28 +667,41 @@ function Sidebar({ onClose, pendingCount = 0 }: { onClose?: () => void; pendingC
 
       {/* Bottom: Abonnement + Paramètres + Logout */}
       <div className="px-2 py-3 border-t border-border flex-shrink-0 space-y-0.5">
-        {/* Plan pill — cliquable */}
-        <NavLink
-          to="/abonnement"
-          onClick={onClose}
-          className={({ isActive }) =>
-            `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-              isActive ? 'bg-primary-light text-primary' : 'text-muted hover:bg-border-light hover:text-dark'
-            }`
-          }
-        >
-          {planId === 'business' ? (
-            <Crown size={15} className="flex-shrink-0 text-purple-500" />
-          ) : planId === 'pro' ? (
-            <Zap size={15} className="flex-shrink-0 text-orange-500" />
-          ) : (
-            <Crown size={15} className="flex-shrink-0" />
-          )}
-          <span className="flex-1 truncate">Abonnement</span>
-          <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0 ${plan.color} ${plan.textColor}`}>
-            {plan.name}
-          </span>
-        </NavLink>
+        {/* Plan pill — cliquable (ou upgrade en démo) */}
+        {isDemo ? (
+          <button
+            onClick={triggerUpgrade}
+            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-muted hover:bg-border-light hover:text-dark transition-colors w-full"
+          >
+            <Crown size={15} className="flex-shrink-0 text-violet-500" />
+            <span className="flex-1 truncate">Abonnement</span>
+            <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0 bg-violet-100 text-violet-700">
+              Démo
+            </span>
+          </button>
+        ) : (
+          <NavLink
+            to="/abonnement"
+            onClick={onClose}
+            className={({ isActive }) =>
+              `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                isActive ? 'bg-primary-light text-primary' : 'text-muted hover:bg-border-light hover:text-dark'
+              }`
+            }
+          >
+            {planId === 'business' ? (
+              <Crown size={15} className="flex-shrink-0 text-purple-500" />
+            ) : planId === 'pro' ? (
+              <Zap size={15} className="flex-shrink-0 text-orange-500" />
+            ) : (
+              <Crown size={15} className="flex-shrink-0" />
+            )}
+            <span className="flex-1 truncate">Abonnement</span>
+            <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0 ${plan.color} ${plan.textColor}`}>
+              {plan.name}
+            </span>
+          </NavLink>
+        )}
 
         <NavLink
           to="/parametres"
@@ -693,13 +716,32 @@ function Sidebar({ onClose, pendingCount = 0 }: { onClose?: () => void; pendingC
           Paramètres
         </NavLink>
 
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm font-medium text-muted hover:text-dark hover:bg-border-light transition-colors"
-        >
-          <LogOut size={15} />
-          Déconnexion
-        </button>
+        {isDemo ? (
+          <>
+            <button
+              onClick={triggerUpgrade}
+              className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-indigo-500 hover:opacity-90 transition-opacity"
+            >
+              <Sparkles size={15} />
+              Passer au Pro
+            </button>
+            <button
+              onClick={handleExitDemo}
+              className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-xs font-medium text-muted hover:text-dark hover:bg-border-light transition-colors"
+            >
+              <LogOut size={13} />
+              Quitter la démo
+            </button>
+          </>
+        ) : (
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm font-medium text-muted hover:text-dark hover:bg-border-light transition-colors"
+          >
+            <LogOut size={15} />
+            Déconnexion
+          </button>
+        )}
       </div>
     </aside>
   )
@@ -708,19 +750,29 @@ function Sidebar({ onClose, pendingCount = 0 }: { onClose?: () => void; pendingC
 // ── Layout ────────────────────────────────────────────────────────────────────
 function Layout() {
   const { user, session, loading } = useAuth()
+  const { isDemo, triggerUpgrade } = useDemo()
   const [dark, setDark] = useState(() => {
     const saved = localStorage.getItem('theme-admin')
     return saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches
   })
   const [notifOpen, setNotifOpen] = useState(false)
   const location = useLocation()
-  const { count: pendingCount, toasts, dismissToast } = usePendingAgents(user?.id ?? null, session?.access_token ?? null)
-  const { notifs, unread, markAllRead } = useCleaningNotifications(user?.id ?? null, session?.access_token ?? null)
+  // En mode démo, pas de polling Supabase (pas de session réelle)
+  const { count: pendingCount, toasts, dismissToast } = usePendingAgents(isDemo ? null : (user?.id ?? null), session?.access_token ?? null)
+  const { notifs, unread, markAllRead } = useCleaningNotifications(isDemo ? null : (user?.id ?? null), session?.access_token ?? null)
 
   React.useEffect(() => {
     document.documentElement.classList.toggle('dark', dark)
     localStorage.setItem('theme-admin', dark ? 'dark' : 'light')
   }, [dark])
+
+  // Écouter les événements demo:upgrade déclenchés par api.ts (403 demo)
+  React.useEffect(() => {
+    if (!isDemo) return
+    const handler = () => triggerUpgrade()
+    window.addEventListener('demo:upgrade', handler)
+    return () => window.removeEventListener('demo:upgrade', handler)
+  }, [isDemo, triggerUpgrade])
 
   if (loading) {
     return (
@@ -730,7 +782,7 @@ function Layout() {
     )
   }
 
-  if (!user) return <Navigate to="/login" replace />
+  if (!user && !isDemo) return <Navigate to="/login" replace />
 
   const title = titleMap[location.pathname] ?? 'StayPilot'
 
@@ -743,6 +795,9 @@ function Layout() {
 
       {/* Main area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Bannière démo */}
+        <DemoBanner />
+
         {/* Header */}
         <header className="flex items-center h-14 px-4 sm:px-6 bg-surface border-b border-border flex-shrink-0 z-40">
           <h1 className="text-sm font-semibold text-dark flex-1 truncate tracking-tight">{title}</h1>
@@ -799,6 +854,9 @@ function Layout() {
       {/* Wizard de démarrage (premier login sans logement) */}
       <OnboardingWizard />
 
+      {/* Modale upgrade démo */}
+      <DemoUpgradeModal />
+
       {/* Toast notifications agents en attente */}
       <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none">
         {toasts.map(t => (
@@ -814,6 +872,7 @@ function Layout() {
 // ── App routes ────────────────────────────────────────────────────────────────
 function AppRoutes() {
   const { user, loading } = useAuth()
+  const { isDemo } = useDemo()
 
   if (loading) {
     return (
@@ -825,8 +884,9 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/login"    element={user ? <Navigate to="/" replace /> : <Login />} />
-      <Route path="/register" element={user ? <Navigate to="/" replace /> : <Register />} />
+      <Route path="/login"    element={(user || isDemo) ? <Navigate to="/" replace /> : <Login />} />
+      <Route path="/register" element={(user || isDemo) ? <Navigate to="/" replace /> : <Register />} />
+      <Route path="/demo"     element={<Demo />} />
       <Route path="/portail/:token" element={<PortailInvestisseur />} />
 
       <Route element={<Layout />}>
@@ -867,11 +927,13 @@ function AppRoutes() {
 export default function App() {
   return (
     <AuthProvider>
-      <PlanProvider>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </PlanProvider>
+      <DemoProvider>
+        <PlanProvider>
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </PlanProvider>
+      </DemoProvider>
     </AuthProvider>
   )
 }
