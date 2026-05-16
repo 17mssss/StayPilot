@@ -289,9 +289,12 @@ export default function PricingDynamique() {
           <TrendingUp size={18} className="text-primary" />
         </div>
         <div>
-          <p className="text-sm font-semibold text-dark">Pricing dynamique</p>
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-semibold text-dark">Pricing dynamique</p>
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200">Bêta</span>
+          </div>
           <p className="text-xs text-muted mt-0.5">
-            Définissez des règles de tarification automatique selon la saison ou l'occupation
+            Définissez des règles de tarification. L'application automatique aux réservations est en cours de développement.
           </p>
         </div>
         <button
