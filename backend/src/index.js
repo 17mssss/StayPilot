@@ -34,6 +34,7 @@ const channelsRoutes        = require('./routes/channels');
 const { investisseursRouter, portailRouter } = require('./routes/investisseurs');
 const inboxRoutes    = require('./routes/inbox');
 const settingsRoutes = require('./routes/settings');
+const { router: demoRoutes } = require('./routes/demo');
 
 // Services cron
 const { startPolling }           = require('./services/superhote');
@@ -64,7 +65,7 @@ const ALLOWED_ORIGINS = [
   'https://staypilot.cc',
   'https://www.staypilot.cc',
   'https://app.staypilot.cc',
-  'https://proprio.staypilot.cc',
+  'https://owner.staypilot.cc',
   'https://cleanpilot.staypilot.cc',   // domaine custom CleanPilot
   'https://frontend-admin-neon-nine.vercel.app',
   'https://cleanpilot-xi.vercel.app',  // ancien domaine Vercel (conservé en fallback)
@@ -151,6 +152,7 @@ app.use('/api/investisseurs',    investisseursRouter);
 app.use('/api/portail',          portailRouter);
 app.use('/api/inbox',            inboxRoutes);
 app.use('/api/settings',         settingsRoutes);
+app.use('/api/demo',             demoRoutes);   // public — pas d'authenticate
 // Double auth — pas de middleware authenticate (appelé avant la session)
 app.use('/api/auth',              strictLimiter, authDeviceRoutes);
 

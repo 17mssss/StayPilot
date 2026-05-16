@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from './AuthContext'
+import { useDemo } from './DemoContext'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -145,6 +146,7 @@ const PlanContext = createContext<PlanContextType | undefined>(undefined)
 
 export function PlanProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth()
+  const { isDemo } = useDemo()
   const [planId, setPlanId] = useState<PlanId>('starter')
   const [loading, setLoading] = useState(true)
 
@@ -193,13 +195,16 @@ export function PlanProvider({ children }: { children: React.ReactNode }) {
 
   const plan = PLANS[planId]
 
+  // En mode démo, toutes les features sont débloquées (plan Enterprise fictif)
   const canUse = (feature: keyof PlanConfig['limits']): boolean => {
+    if (isDemo) return true
     const val = plan.limits[feature]
     if (typeof val === 'boolean') return val
     return true // les limites numériques sont gérées par isAtLimit
   }
 
   const isAtLimit = (feature: 'logements' | 'proprietaires', current: number): boolean => {
+    if (isDemo) return false // pas de limite en démo
     const limit = plan.limits[feature]
     if (limit === -1) return false // illimité
     return current >= limit

@@ -1,4 +1,5 @@
 const { createClient } = require('@supabase/supabase-js');
+const { verifyToken: verifyDemoToken, DEMO_CLIENT_ID } = require('../routes/demo');
 
 /**
  * Assertion de démarrage : NODE_ENV doit être explicitement défini.
@@ -40,6 +41,29 @@ async function authenticate(req, res, next) {
   }
 
   const token = authHeader.split(' ')[1];
+
+  // ── Mode démo : token préfixé "demo_" ─────────────────────────────────────
+  if (token.startsWith('demo_')) {
+    const rawToken = token.slice(5); // retirer le préfixe
+    const payload  = verifyDemoToken(rawToken);
+    if (!payload) {
+      return res.status(401).json({ success: false, error: 'Token démo invalide ou expiré' });
+    }
+    req.user     = { id: DEMO_CLIENT_ID, email: 'demo@staypilot.cc' };
+    req.clientId = DEMO_CLIENT_ID;
+    req.client   = { id: DEMO_CLIENT_ID, email: 'demo@staypilot.cc' };
+    req.isDemo   = true;
+
+    // Bloquer toutes les écritures en mode démo
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
+      return res.status(403).json({
+        success: false,
+        demo:    true,
+        error:   'Action non disponible en mode démo',
+      });
+    }
+    return next();
+  }
 
   try {
     const supabase = createClient(
