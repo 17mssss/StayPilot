@@ -141,7 +141,6 @@ export default function Parametres() {
     airbnb_client_id: '', airbnb_client_secret: '',
     booking_api_key: '', booking_property_id: '',
     superhote_api_key: '',
-    stripe_link_pro: '', stripe_link_business: '', stripe_link_enterprise: '',
   })
   const [apiKeysSaving, setApiKeysSaving] = useState(false)
   const [apiKeysMsg, setApiKeysMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
@@ -575,19 +574,6 @@ export default function Parametres() {
           <Field label="Clé API Superhote" value={apiKeys.superhote_api_key}
             onChange={v => setApiKeys(p => ({ ...p, superhote_api_key: v }))} secret
             placeholder="sk-..." hint="Superhote → Paramètres → API" />
-        </div>
-
-        <div className="border-b border-border pb-4 space-y-3">
-          <p className="text-xs font-semibold text-dark uppercase tracking-wide">💳 Stripe (liens de paiement production)</p>
-          <Field label="Lien Stripe — Plan Starter" value={apiKeys.stripe_link_pro}
-            onChange={v => setApiKeys(p => ({ ...p, stripe_link_pro: v }))}
-            placeholder="https://buy.stripe.com/..." hint="Stripe Dashboard → Payment Links" />
-          <Field label="Lien Stripe — Plan Pro" value={apiKeys.stripe_link_business}
-            onChange={v => setApiKeys(p => ({ ...p, stripe_link_business: v }))}
-            placeholder="https://buy.stripe.com/..." />
-          <Field label="Lien Stripe — Plan Business" value={apiKeys.stripe_link_enterprise}
-            onChange={v => setApiKeys(p => ({ ...p, stripe_link_enterprise: v }))}
-            placeholder="https://buy.stripe.com/..." />
         </div>
 
         {apiKeysMsg && (
