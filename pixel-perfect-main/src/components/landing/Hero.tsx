@@ -81,7 +81,7 @@ const Hero = () => {
             href="#contact"
             className="inline-flex items-center justify-center rounded-btn bg-primary px-7 py-3.5 text-base font-semibold text-primary-foreground hover:bg-primary/90 transition-all hover:scale-[1.02]"
           >
-            Demander une démo gratuite
+            Réserver un appel personnalisé
           </a>
           <a
             href="#pricing"

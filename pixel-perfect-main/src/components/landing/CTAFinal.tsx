@@ -94,13 +94,14 @@ const CTAFinal = () => {
             Prêt à mettre votre conciergerie en pilote automatique ?
           </h2>
           <p className="text-white/60 max-w-lg mx-auto mb-8">
-            Démo de 20 minutes · Sans engagement · Réponse sous 24h
+            📞 Appel personnalisé · Démo sur mesure sous 48h · Sans engagement
           </p>
 
           {sent ? (
             <div className="bg-white/10 rounded-lg p-8 text-white">
-              <p className="text-xl font-semibold mb-2">✅ Demande envoyée !</p>
-              <p className="text-white/60">On vous répond dans les 24h.</p>
+              <p className="text-xl font-semibold mb-2">✅ Demande reçue !</p>
+              <p className="text-white/70 mb-3">On vous contacte dans les 24h pour un appel personnalisé.</p>
+              <p className="text-white/50 text-sm">Vous recevrez ensuite un lien de démo interactive préparé spécialement pour vous.</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4 text-left">
@@ -154,7 +155,7 @@ const CTAFinal = () => {
                 disabled={loading}
                 className="w-full rounded-btn bg-primary px-10 py-4 text-lg font-semibold text-white hover:bg-primary/90 transition-all hover:scale-[1.01] disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {loading ? "Envoi en cours…" : "Demander une démo gratuite →"}
+                {loading ? "Envoi en cours…" : "Réserver un appel personnalisé →"}
               </button>
             </form>
           )}

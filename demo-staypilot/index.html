@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StayPilot — Tableau de bord</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Reset & Tokens ────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary: #EA580C;
+      --primary-dark: #C2410C;
+      --primary-light: #FFF7ED;
+      --bg: #F9FAFB;
+      --surface: #FFFFFF;
+      --dark: #374151;
+      --darker: #111827;
+      --muted: #6B7280;
+      --muted-light: #A3A3A3;
+      --border: #E5E7EB;
+      --border-light: #F3F4F6;
+      --green: #16A34A;
+      --green-bg: #D1FAE5;
+      --blue: #2563EB;
+      --blue-bg: #DBEAFE;
+      --purple: #7C3AED;
+      --purple-bg: #EDE9FE;
+      --sidebar-w: 220px;
+      --header-h: 60px;
+    }
+    html, body { height: 100%; overflow: hidden; background: var(--bg); font-family: 'Inter', sans-serif; color: var(--dark); -webkit-font-smoothing: antialiased; }
+
+    /* ── Error screen ──────────────────────────────────── */
+    #errorScreen {
+      display: none;
+      position: fixed; inset: 0;
+      background: var(--bg);
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+      text-align: center;
+      padding: 24px;
+    }
+    #errorScreen.show { display: flex; }
+    .error-icon { font-size: 48px; }
+    .error-title { font-size: 22px; font-weight: 700; color: var(--darker); }
+    .error-msg { font-size: 14px; color: var(--muted); max-width: 320px; line-height: 1.6; }
+
+    /* ── App shell ─────────────────────────────────────── */
+    #app {
+      display: none;
+      height: 100%;
+      flex-direction: column;
+    }
+    #app.show { display: flex; }
+
+    /* ── Demo banner ───────────────────────────────────── */
+    .demo-banner {
+      background: var(--primary);
+      color: white;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 16px;
+      letter-spacing: 0.02em;
+      flex-shrink: 0;
+    }
+    .demo-banner span { opacity: 0.85; font-weight: 400; }
+
+    /* ── Layout ────────────────────────────────────────── */
+    .layout {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── Sidebar ───────────────────────────────────────── */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      overflow-y: auto;
+    }
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+    }
+
+    .sidebar-logo {
+      padding: 20px 18px 16px;
+      border-bottom: 1px solid var(--border-light);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .sidebar-logo-icon {
+      width: 30px; height: 30px;
+      background: var(--primary);
+      border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-weight: 800; font-size: 14px;
+    }
+    .sidebar-logo-text { font-weight: 700; font-size: 15px; color: var(--darker); }
+
+    .sidebar-nav { padding: 10px 10px; flex: 1; }
+    .nav-section { margin-bottom: 4px; }
+    .nav-label { font-size: 10px; font-weight: 600; color: var(--muted-light); text-transform: uppercase; letter-spacing: 0.08em; padding: 8px 8px 4px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 10px;
+      border-radius: 8px;
+      font-size: 13.5px; font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.12s;
+      text-decoration: none;
+    }
+    .nav-item:hover { background: var(--bg); color: var(--darker); }
+    .nav-item.active { background: var(--primary-light); color: var(--primary); font-weight: 600; }
+    .nav-item .nav-icon { font-size: 16px; width: 20px; text-align: center; flex-shrink: 0; }
+    .nav-badge {
+      margin-left: auto;
+      background: var(--primary);
+      color: white;
+      font-size: 10px; font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 10px;
+    }
+
+    .sidebar-footer {
+      padding: 12px 10px;
+      border-top: 1px solid var(--border-light);
+    }
+    .user-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .user-row:hover { background: var(--bg); }
+    .user-avatar {
+      width: 32px; height: 32px;
+      background: var(--primary);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-weight: 700; font-size: 13px;
+      flex-shrink: 0;
+    }
+    .user-name { font-size: 13px; font-weight: 600; color: var(--darker); }
+    .user-role { font-size: 11px; color: var(--muted-light); }
+
+    /* ── Main content ──────────────────────────────────── */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      background: var(--bg);
+    }
+    .main-inner {
+      max-width: 1100px;
+      padding: 28px 28px 40px;
+    }
+    @media (max-width: 768px) {
+      .main-inner { padding: 16px 16px 80px; }
+    }
+
+    /* ── Mobile header ─────────────────────────────────── */
+    .mobile-header {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      height: 52px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    @media (max-width: 768px) { .mobile-header { display: flex; } }
+    .mobile-logo { display: flex; align-items: center; gap: 8px; }
+    .mobile-logo-icon { width: 26px; height: 26px; background: var(--primary); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 12px; }
+    .mobile-logo-text { font-weight: 700; font-size: 14px; color: var(--darker); }
+
+    /* ── Welcome ───────────────────────────────────────── */
+    .welcome-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      gap: 12px;
+    }
+    .welcome-title { font-size: 22px; font-weight: 700; color: var(--darker); }
+    @media (max-width: 768px) { .welcome-title { font-size: 18px; } }
+    .welcome-sub { font-size: 13px; color: var(--muted); margin-top: 3px; }
+    .cta-btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 9px;
+      padding: 10px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: background 0.15s, transform 0.1s;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .cta-btn:hover { background: var(--primary-dark); }
+    .cta-btn:active { transform: scale(0.97); }
+
+    /* ── Stats grid ────────────────────────────────────── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    @media (max-width: 900px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 480px) { .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; } }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      transition: box-shadow 0.15s;
+    }
+    .stat-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.07); }
+    .stat-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+    .stat-icon { font-size: 14px; }
+    .stat-value { font-size: 26px; font-weight: 800; color: var(--darker); line-height: 1; }
+    @media (max-width: 480px) { .stat-value { font-size: 20px; } }
+    .stat-change { font-size: 11px; color: var(--green); font-weight: 600; margin-top: 6px; }
+    .stat-change.down { color: #DC2626; }
+
+    /* ── Grid 2 col ─────────────────────────────────────── */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    @media (max-width: 1000px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    /* ── Card ──────────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .card-header {
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--border-light);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .card-title { font-size: 14px; font-weight: 700; color: var(--darker); }
+    .card-action { font-size: 12px; color: var(--primary); font-weight: 600; cursor: pointer; }
+    .card-action:hover { text-decoration: underline; }
+
+    /* ── Chart ─────────────────────────────────────────── */
+    .chart-area { padding: 20px 18px 14px; }
+    .chart-bars {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      height: 140px;
+    }
+    .bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .bar-wrap { width: 100%; position: relative; display: flex; align-items: flex-end; height: 120px; }
+    .bar {
+      width: 100%;
+      border-radius: 5px 5px 0 0;
+      transition: opacity 0.15s;
+      cursor: pointer;
+    }
+    .bar:hover { opacity: 0.8; }
+    .bar-label { font-size: 11px; color: var(--muted-light); font-weight: 500; }
+    .bar-value { font-size: 10px; color: var(--muted); text-align: center; }
+    .chart-legend {
+      display: flex;
+      gap: 16px;
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-light);
+    }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+    .legend-dot { width: 8px; height: 8px; border-radius: 2px; }
+
+    /* ── Reservations list ──────────────────────────────── */
+    .res-list { padding: 0; }
+    .res-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 18px;
+      border-bottom: 1px solid var(--border-light);
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+    .res-item:last-child { border-bottom: none; }
+    .res-item:hover { background: var(--bg); }
+    .res-avatar {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 14px;
+      color: white;
+      flex-shrink: 0;
+    }
+    .res-name { font-size: 13px; font-weight: 600; color: var(--darker); }
+    .res-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .res-right { margin-left: auto; text-align: right; flex-shrink: 0; }
+    .res-amount { font-size: 13px; font-weight: 700; color: var(--darker); }
+    .res-badge {
+      display: inline-block;
+      font-size: 10px; font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 20px;
+      margin-top: 3px;
+    }
+    .badge-in { background: var(--green-bg); color: #065F46; }
+    .badge-out { background: var(--blue-bg); color: #1E40AF; }
+    .badge-staying { background: #FEF3C7; color: #92400E; }
+    .badge-upcoming { background: var(--border-light); color: var(--muted); }
+
+    /* ── Properties ────────────────────────────────────── */
+    .props-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    @media (max-width: 768px) { .props-grid { grid-template-columns: 1fr; gap: 10px; } }
+
+    .prop-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: box-shadow 0.15s, transform 0.12s;
+    }
+    .prop-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.09); transform: translateY(-1px); }
+    .prop-img {
+      height: 130px;
+      background-size: cover;
+      background-position: center;
+      position: relative;
+    }
+    .prop-status {
+      position: absolute;
+      top: 10px; left: 10px;
+      font-size: 10px; font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 20px;
+      backdrop-filter: blur(4px);
+    }
+    .prop-status.occupied { background: rgba(22,163,74,0.9); color: white; }
+    .prop-status.free { background: rgba(255,255,255,0.9); color: var(--green); }
+    .prop-status.cleaning { background: rgba(234,88,12,0.9); color: white; }
+    .prop-body { padding: 12px 14px; }
+    .prop-name { font-size: 13px; font-weight: 700; color: var(--darker); margin-bottom: 4px; }
+    .prop-loc { font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 4px; }
+    .prop-stats { display: flex; gap: 12px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-light); }
+    .prop-stat { text-align: center; flex: 1; }
+    .prop-stat-v { font-size: 13px; font-weight: 700; color: var(--darker); }
+    .prop-stat-l { font-size: 10px; color: var(--muted-light); margin-top: 1px; }
+
+    /* ── Right panel ───────────────────────────────────── */
+    .right-col { display: flex; flex-direction: column; gap: 16px; }
+
+    /* ── Tasks ─────────────────────────────────────────── */
+    .task-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .task-item:last-child { border-bottom: none; }
+    .task-check {
+      width: 18px; height: 18px;
+      border: 1.5px solid var(--border);
+      border-radius: 4px;
+      flex-shrink: 0;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .task-check.done { background: var(--green); border-color: var(--green); color: white; font-size: 11px; }
+    .task-text { font-size: 13px; color: var(--darker); flex: 1; }
+    .task-text.done { color: var(--muted-light); text-decoration: line-through; }
+    .task-tag { font-size: 10px; color: var(--muted); background: var(--border-light); padding: 2px 7px; border-radius: 4px; flex-shrink: 0; }
+
+    /* ── Rating ────────────────────────────────────────── */
+    .stars { color: #F59E0B; font-size: 14px; }
+    .review-item {
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .review-item:last-child { border-bottom: none; }
+    .review-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .review-name { font-size: 13px; font-weight: 600; color: var(--darker); }
+    .review-prop { font-size: 11px; color: var(--muted); margin-left: auto; }
+    .review-text { font-size: 12px; color: var(--muted); line-height: 1.55; }
+
+    /* ── Toast ─────────────────────────────────────────── */
+    .toast {
+      position: fixed;
+      bottom: 24px; right: 24px;
+      background: var(--darker);
+      color: white;
+      padding: 12px 18px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+      transform: translateY(20px);
+      opacity: 0;
+      transition: all 0.25s;
+      z-index: 9999;
+      pointer-events: none;
+      max-width: 280px;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    /* ── Mobile bottom nav ─────────────────────────────── */
+    .mobile-nav {
+      display: none;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 8px 0 max(8px, env(safe-area-inset-bottom, 0px));
+    }
+    @media (max-width: 768px) { .mobile-nav { display: flex; } }
+    .mobile-nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      padding: 4px;
+      cursor: pointer;
+      color: var(--muted-light);
+      font-size: 10px;
+      font-weight: 500;
+    }
+    .mobile-nav-item.active { color: var(--primary); }
+    .mobile-nav-icon { font-size: 18px; }
+
+    /* ── Section title ─────────────────────────────────── */
+    .section-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--darker);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .section-link { font-size: 12px; color: var(--primary); font-weight: 600; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+<!-- Error screen -->
+<div id="errorScreen">
+  <div class="error-icon" id="errorIcon">🔒</div>
+  <div class="error-title" id="errorTitle">Lien invalide</div>
+  <div class="error-msg" id="errorMsg">Ce lien de démonstration n'est pas valide ou a expiré. Contactez votre interlocuteur StayPilot pour obtenir un nouveau lien.</div>
+</div>
+
+<!-- App -->
+<div id="app">
+  <div class="demo-banner">
+    Mode démo — <span>Données fictives à titre d'illustration.</span>
+    Vous découvrez StayPilot en avant-première.
+  </div>
+
+  <div class="layout">
+    <!-- Sidebar (desktop) -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">S</div>
+        <div class="sidebar-logo-text">StayPilot</div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-item active">
+            <span class="nav-icon">🏠</span> Tableau de bord
+          </div>
+          <div class="nav-item" onclick="showToast('Réservations — disponible dans la version complète')">
+            <span class="nav-icon">📅</span> Réservations
+            <span class="nav-badge">3</span>
+          </div>
+          <div class="nav-item" onclick="showToast('Propriétés — disponible dans la version complète')">
+            <span class="nav-icon">🏘️</span> Propriétés
+          </div>
+        </div>
+        <div class="nav-section">
+          <div class="nav-label">Gestion</div>
+          <div class="nav-item" onclick="showToast('Messagerie IA — disponible dans la version complète')">
+            <span class="nav-icon">💬</span> Messagerie IA
+            <span class="nav-badge">5</span>
+          </div>
+          <div class="nav-item" onclick="showToast('Équipe ménage — disponible dans la version complète')">
+            <span class="nav-icon">🧹</span> Équipe ménage
+          </div>
+          <div class="nav-item" onclick="showToast('Analytiques — disponible dans la version complète')">
+            <span class="nav-icon">📊</span> Analytiques
+          </div>
+        </div>
+        <div class="nav-section">
+          <div class="nav-label">Avancé</div>
+          <div class="nav-item" onclick="showToast('CRM Voyageurs — disponible dans la version complète')">
+            <span class="nav-icon">👥</span> CRM Voyageurs
+          </div>
+          <div class="nav-item" onclick="showToast('Export comptable — disponible dans la version complète')">
+            <span class="nav-icon">🧾</span> Comptabilité
+          </div>
+          <div class="nav-item" onclick="showToast('Paramètres — disponible dans la version complète')">
+            <span class="nav-icon">⚙️</span> Paramètres
+          </div>
+        </div>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="user-row">
+          <div class="user-avatar" id="sidebarAvatar">?</div>
+          <div>
+            <div class="user-name" id="sidebarName">Chargement…</div>
+            <div class="user-role">Démo</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+      <!-- Mobile header -->
+      <div class="mobile-header">
+        <div class="mobile-logo">
+          <div class="mobile-logo-icon">S</div>
+          <div class="mobile-logo-text">StayPilot</div>
+        </div>
+        <div style="font-size:12px;color:var(--muted);">Mode démo</div>
+      </div>
+
+      <!-- Scrollable content -->
+      <main class="main">
+        <div class="main-inner">
+
+          <!-- Welcome -->
+          <div class="welcome-row">
+            <div>
+              <div class="welcome-title">Bonjour, <span id="prospectName">…</span> 👋</div>
+              <div class="welcome-sub" id="todayDate">Votre tableau de bord en temps réel</div>
+            </div>
+            <a href="mailto:contact@staypilot.cc?subject=Démo StayPilot&body=Bonjour, je souhaite en savoir plus sur StayPilot." class="cta-btn">
+              ✉️ Demander une démo live
+            </a>
+          </div>
+
+          <!-- Stats -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-label"><span class="stat-icon">📈</span> Taux d'occupation</div>
+              <div class="stat-value">78%</div>
+              <div class="stat-change">↑ +6% vs mois dernier</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label"><span class="stat-icon">💶</span> Revenus du mois</div>
+              <div class="stat-value">4 250 €</div>
+              <div class="stat-change">↑ +12% vs mois dernier</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label"><span class="stat-icon">🏨</span> Réservations actives</div>
+              <div class="stat-value">3</div>
+              <div class="stat-change">7 à venir ce mois</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label"><span class="stat-icon">⭐</span> Note Airbnb</div>
+              <div class="stat-value">4,87</div>
+              <div class="stat-change">↑ +0.03 vs mois dernier</div>
+            </div>
+          </div>
+
+          <!-- Properties -->
+          <div class="section-title">
+            Mes logements
+            <span class="section-link" onclick="showToast('Voir tous les logements — disponible dans la version complète')">Voir tout</span>
+          </div>
+          <div class="props-grid">
+            <div class="prop-card" onclick="showToast('Détail du logement — disponible dans la version complète')">
+              <div class="prop-img" style="background-image: url('https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&q=80');">
+                <div class="prop-status occupied">● Occupé</div>
+              </div>
+              <div class="prop-body">
+                <div class="prop-name">Studio Marais</div>
+                <div class="prop-loc">📍 Paris 3e</div>
+                <div class="prop-stats">
+                  <div class="prop-stat"><div class="prop-stat-v">84%</div><div class="prop-stat-l">Occupation</div></div>
+                  <div class="prop-stat"><div class="prop-stat-v">1 820€</div><div class="prop-stat-l">Ce mois</div></div>
+                  <div class="prop-stat"><div class="prop-stat-v">4.9 ⭐</div><div class="prop-stat-l">Note</div></div>
+                </div>
+              </div>
+            </div>
+            <div class="prop-card" onclick="showToast('Détail du logement — disponible dans la version complète')">
+              <div class="prop-img" style="background-image: url('https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&q=80');">
+                <div class="prop-status occupied">● Occupé</div>
+              </div>
+              <div class="prop-body">
+                <div class="prop-name">T2 Montmartre</div>
+                <div class="prop-loc">📍 Paris 18e</div>
+                <div class="prop-stats">
+                  <div class="prop-stat"><div class="prop-stat-v">71%</div><div class="prop-stat-l">Occupation</div></div>
+                  <div class="prop-stat"><div class="prop-stat-v">1 540€</div><div class="prop-stat-l">Ce mois</div></div>
+                  <div class="prop-stat"><div class="prop-stat-v">4.8 ⭐</div><div class="prop-stat-l">Note</div></div>
+                </div>
+              </div>
+            </div>
+            <div class="prop-card" onclick="showToast('Détail du logement — disponible dans la version complète')">
+              <div class="prop-img" style="background-image: url('https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?w=400&q=80');">
+                <div class="prop-status cleaning">🧹 Ménage</div>
+              </div>
+              <div class="prop-body">
+                <div class="prop-name">Loft Bastille</div>
+                <div class="prop-loc">📍 Paris 11e</div>
+                <div class="prop-stats">
+                  <div class="prop-stat"><div class="prop-stat-v">79%</div><div class="prop-stat-l">Occupation</div></div>
+                  <div class="prop-stat"><div class="prop-stat-v">890€</div><div class="prop-stat-l">Ce mois</div></div>
+                  <div class="prop-stat"><div class="prop-stat-v">4.85 ⭐</div><div class="prop-stat-l">Note</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2-col grid: Chart + Reservations -->
+          <div class="grid-2">
+            <!-- Revenue chart -->
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">📊 Revenus — 6 derniers mois</div>
+                <span class="card-action" onclick="showToast('Analytiques détaillées — disponible dans la version complète')">Voir tout</span>
+              </div>
+              <div class="chart-area">
+                <div class="chart-bars">
+                  <div class="bar-group">
+                    <div class="bar-wrap"><div class="bar" style="height:52%;background:#EA580C;opacity:0.35;"></div></div>
+                    <div class="bar-label">Dec</div>
+                    <div class="bar-value">2 100€</div>
+                  </div>
+                  <div class="bar-group">
+                    <div class="bar-wrap"><div class="bar" style="height:61%;background:#EA580C;opacity:0.45;"></div></div>
+                    <div class="bar-label">Jan</div>
+                    <div class="bar-value">2 450€</div>
+                  </div>
+                  <div class="bar-group">
+                    <div class="bar-wrap"><div class="bar" style="height:68%;background:#EA580C;opacity:0.55;"></div></div>
+                    <div class="bar-label">Fév</div>
+                    <div class="bar-value">2 720€</div>
+                  </div>
+                  <div class="bar-group">
+                    <div class="bar-wrap"><div class="bar" style="height:79%;background:#EA580C;opacity:0.65;"></div></div>
+                    <div class="bar-label">Mar</div>
+                    <div class="bar-value">3 180€</div>
+                  </div>
+                  <div class="bar-group">
+                    <div class="bar-wrap"><div class="bar" style="height:92%;background:#EA580C;opacity:0.8;"></div></div>
+                    <div class="bar-label">Avr</div>
+                    <div class="bar-value">3 700€</div>
+                  </div>
+                  <div class="bar-group">
+                    <div class="bar-wrap"><div class="bar" style="height:100%;background:#EA580C;"></div></div>
+                    <div class="bar-label">Mai</div>
+                    <div class="bar-value">4 250€</div>
+                  </div>
+                </div>
+                <div class="chart-legend">
+                  <div class="legend-item">
+                    <div class="legend-dot" style="background:#EA580C;"></div>
+                    Revenus nets (hors frais Airbnb)
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right column -->
+            <div class="right-col">
+              <!-- Tasks -->
+              <div class="card">
+                <div class="card-header">
+                  <div class="card-title">✅ Actions à faire</div>
+                  <span class="card-action" onclick="showToast('Toutes les tâches — disponible dans la version complète')">Voir tout</span>
+                </div>
+                <div>
+                  <div class="task-item">
+                    <div class="task-check done" onclick="toggleTask(this)">✓</div>
+                    <div class="task-text done">Confirmer la réservation Dupont</div>
+                    <div class="task-tag">Studio</div>
+                  </div>
+                  <div class="task-item">
+                    <div class="task-check" onclick="toggleTask(this)"></div>
+                    <div class="task-text">Envoyer livret d'accueil à Marie K.</div>
+                    <div class="task-tag">T2</div>
+                  </div>
+                  <div class="task-item">
+                    <div class="task-check" onclick="toggleTask(this)"></div>
+                    <div class="task-text">Ménage Loft Bastille avant 15h</div>
+                    <div class="task-tag">Loft</div>
+                  </div>
+                  <div class="task-item">
+                    <div class="task-check" onclick="toggleTask(this)"></div>
+                    <div class="task-text">Répondre avis ★★★★ de Lucas M.</div>
+                    <div class="task-tag">Studio</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Upcoming reservations -->
+          <div class="section-title">
+            Prochains séjours
+            <span class="section-link" onclick="showToast('Toutes les réservations — disponible dans la version complète')">Voir tout</span>
+          </div>
+          <div class="card" style="margin-bottom:20px;">
+            <div class="res-list">
+              <div class="res-item" onclick="showToast('Détail réservation — disponible dans la version complète')">
+                <div class="res-avatar" style="background:#EA580C;">JD</div>
+                <div>
+                  <div class="res-name">Julie Dupont</div>
+                  <div class="res-meta">Studio Marais · Check-in aujourd'hui 15h00</div>
+                </div>
+                <div class="res-right">
+                  <div class="res-amount">310 €</div>
+                  <div class="res-badge badge-in">Check-in</div>
+                </div>
+              </div>
+              <div class="res-item" onclick="showToast('Détail réservation — disponible dans la version complète')">
+                <div class="res-avatar" style="background:#2563EB;">MK</div>
+                <div>
+                  <div class="res-name">Marc Keller</div>
+                  <div class="res-meta">T2 Montmartre · En séjour jusqu'au 20 mai</div>
+                </div>
+                <div class="res-right">
+                  <div class="res-amount">620 €</div>
+                  <div class="res-badge badge-staying">En séjour</div>
+                </div>
+              </div>
+              <div class="res-item" onclick="showToast('Détail réservation — disponible dans la version complète')">
+                <div class="res-avatar" style="background:#7C3AED;">SR</div>
+                <div>
+                  <div class="res-name">Sofia Russo</div>
+                  <div class="res-meta">Loft Bastille · Check-out demain 11h00</div>
+                </div>
+                <div class="res-right">
+                  <div class="res-amount">480 €</div>
+                  <div class="res-badge badge-out">Check-out</div>
+                </div>
+              </div>
+              <div class="res-item" onclick="showToast('Détail réservation — disponible dans la version complète')">
+                <div class="res-avatar" style="background:#16A34A;">TW</div>
+                <div>
+                  <div class="res-name">Thomas Weber</div>
+                  <div class="res-meta">Studio Marais · Check-in 22 mai · 4 nuits</div>
+                </div>
+                <div class="res-right">
+                  <div class="res-amount">560 €</div>
+                  <div class="res-badge badge-upcoming">À venir</div>
+                </div>
+              </div>
+              <div class="res-item" onclick="showToast('Détail réservation — disponible dans la version complète')">
+                <div class="res-avatar" style="background:#D97706;">AM</div>
+                <div>
+                  <div class="res-name">Anna Müller</div>
+                  <div class="res-meta">T2 Montmartre · Check-in 24 mai · 7 nuits</div>
+                </div>
+                <div class="res-right">
+                  <div class="res-amount">1 050 €</div>
+                  <div class="res-badge badge-upcoming">À venir</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent reviews -->
+          <div class="section-title">
+            Derniers avis voyageurs
+            <span class="section-link" onclick="showToast('Tous les avis — disponible dans la version complète')">Voir tout</span>
+          </div>
+          <div class="card" style="margin-bottom:20px;">
+            <div class="review-item">
+              <div class="review-header">
+                <div class="review-name">Marc Keller</div>
+                <div class="stars">★★★★★</div>
+                <div class="review-prop">T2 Montmartre</div>
+              </div>
+              <div class="review-text">Appartement magnifique, très bien équipé. L'hôte est réactif et les instructions d'arrivée étaient parfaites. Je recommande vivement !</div>
+            </div>
+            <div class="review-item">
+              <div class="review-header">
+                <div class="review-name">Sofia Russo</div>
+                <div class="stars">★★★★★</div>
+                <div class="review-prop">Loft Bastille</div>
+              </div>
+              <div class="review-text">Séjour parfait, logement conforme aux photos. Le livret d'accueil digital était très pratique pour les bons plans du quartier.</div>
+            </div>
+            <div class="review-item">
+              <div class="review-header">
+                <div class="review-name">Lucas Marin</div>
+                <div class="stars" style="color:#F59E0B;">★★★★<span style="color:#D1D5DB;">★</span></div>
+                <div class="review-prop">Studio Marais</div>
+              </div>
+              <div class="review-text">Très bon séjour, emplacement idéal. Petit bémol sur la propreté de la salle de bain à l'arrivée, mais l'hôte a été réactif.</div>
+            </div>
+          </div>
+
+          <!-- CTA bottom -->
+          <div style="background: linear-gradient(135deg, #EA580C 0%, #C2410C 100%); border-radius:16px; padding:28px; text-align:center; color:white;">
+            <div style="font-size:20px;font-weight:800;margin-bottom:8px;">Prêt à automatiser votre conciergerie ?</div>
+            <div style="font-size:14px;opacity:0.85;margin-bottom:20px;max-width:420px;margin-left:auto;margin-right:auto;line-height:1.6;">StayPilot gère vos réservations, votre équipe ménage, votre messagerie voyageurs et votre comptabilité — tout en un.</div>
+            <a href="mailto:contact@staypilot.cc?subject=Démo StayPilot — Je suis intéressé&body=Bonjour,%0A%0AJ'ai découvert StayPilot via la démo et je souhaite en savoir plus.%0A%0ACordialement" class="cta-btn" style="display:inline-flex;background:white;color:#EA580C;font-size:14px;padding:12px 28px;">
+              📞 Prendre rendez-vous
+            </a>
+          </div>
+
+        </div><!-- /main-inner -->
+      </main>
+    </div>
+  </div>
+
+  <!-- Mobile bottom nav -->
+  <div class="mobile-nav">
+    <div class="mobile-nav-item active">
+      <span class="mobile-nav-icon">🏠</span>
+      Dashboard
+    </div>
+    <div class="mobile-nav-item" onclick="showToast('Réservations — version complète')">
+      <span class="mobile-nav-icon">📅</span>
+      Réservations
+    </div>
+    <div class="mobile-nav-item" onclick="showToast('Messagerie — version complète')">
+      <span class="mobile-nav-icon">💬</span>
+      Messagerie
+    </div>
+    <div class="mobile-nav-item" onclick="showToast('Analytiques — version complète')">
+      <span class="mobile-nav-icon">📊</span>
+      Stats
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── Config ─────────────────────────────────────────────
+  const SECRET = 'SP-DEMO-2026-staypilot-x9k2m';  // ← même clé dans generate.html
+
+  // ── HMAC-SHA256 ────────────────────────────────────────
+  async function hmacSign(message) {
+    const enc = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      'raw', enc.encode(SECRET),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false, ['sign']
+    );
+    const sig = await crypto.subtle.sign('HMAC', key, enc.encode(message));
+    return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  // ── Token verification ─────────────────────────────────
+  async function verify() {
+    const params = new URLSearchParams(window.location.search);
+    const p   = params.get('p');
+    const exp = params.get('exp');
+    const sig = params.get('sig');
+
+    if (!p || !exp || !sig) return showError('🔗', 'Lien invalide', 'Il manque des paramètres dans ce lien. Demandez un nouveau lien à votre interlocuteur StayPilot.');
+
+    const now = Math.floor(Date.now() / 1000);
+    if (parseInt(exp) < now) return showError('⏰', 'Lien expiré', 'Ce lien de démonstration n\'est plus valide. Contactez votre interlocuteur StayPilot pour obtenir un nouveau lien.');
+
+    const expected = await hmacSign(`${p}:${exp}`);
+    if (expected !== sig) return showError('🔒', 'Signature invalide', 'Ce lien a été modifié ou est invalide. Utilisez le lien original que vous avez reçu.');
+
+    // ✅ Valid — show app
+    const name = decodeURIComponent(p);
+    document.getElementById('prospectName').textContent = name;
+    document.getElementById('sidebarName').textContent = name;
+    const initials = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+    document.getElementById('sidebarAvatar').textContent = initials;
+
+    const opts = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+    document.getElementById('todayDate').textContent =
+      'Votre tableau de bord en temps réel · ' + new Date().toLocaleDateString('fr-FR', opts);
+
+    document.getElementById('app').classList.add('show');
+  }
+
+  function showError(icon, title, msg) {
+    document.getElementById('errorIcon').textContent = icon;
+    document.getElementById('errorTitle').textContent = title;
+    document.getElementById('errorMsg').textContent = msg;
+    document.getElementById('errorScreen').classList.add('show');
+  }
+
+  // ── Toast ──────────────────────────────────────────────
+  let toastTimer;
+  function showToast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+  }
+
+  // ── Task toggle ────────────────────────────────────────
+  function toggleTask(check) {
+    const done = !check.classList.contains('done');
+    check.classList.toggle('done', done);
+    check.textContent = done ? '✓' : '';
+    check.nextElementSibling.classList.toggle('done', done);
+  }
+
+  // ── Init ───────────────────────────────────────────────
+  verify();
+</script>
+</body>
+</html>

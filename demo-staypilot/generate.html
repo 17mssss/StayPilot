@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StayPilot — Générateur de liens démo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #F9FAFB;
+      color: #374151;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid #E5E7EB;
+      border-radius: 16px;
+      padding: 40px;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 32px;
+    }
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: #EA580C;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 700;
+      font-size: 16px;
+    }
+    .logo-text { font-size: 18px; font-weight: 700; color: #111827; }
+    .logo-sub { font-size: 11px; color: #A3A3A3; margin-top: 1px; }
+
+    h2 { font-size: 20px; font-weight: 700; color: #111827; margin-bottom: 6px; }
+    .subtitle { font-size: 13px; color: #6B7280; margin-bottom: 28px; }
+
+    label { display: block; font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+    input, select {
+      width: 100%;
+      border: 1.5px solid #E5E7EB;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 14px;
+      font-family: inherit;
+      color: #111827;
+      background: #fff;
+      outline: none;
+      transition: border-color 0.15s;
+      margin-bottom: 18px;
+    }
+    input:focus, select:focus { border-color: #EA580C; }
+    input[type="password"] { letter-spacing: 2px; }
+
+    .btn {
+      width: 100%;
+      background: #EA580C;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .btn:hover { background: #C2410C; }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { background: #D1D5DB; cursor: not-allowed; }
+
+    .result-box {
+      margin-top: 24px;
+      background: #FFF7ED;
+      border: 1.5px solid #FED7AA;
+      border-radius: 10px;
+      padding: 16px;
+      display: none;
+    }
+    .result-box.show { display: block; }
+    .result-label { font-size: 11px; font-weight: 600; color: #EA580C; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+    .result-url {
+      font-size: 12px;
+      color: #374151;
+      word-break: break-all;
+      font-family: 'Courier New', monospace;
+      background: #fff;
+      border: 1px solid #FED7AA;
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    .copy-btn {
+      width: 100%;
+      background: #111827;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 9px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+    .copy-btn:hover { background: #374151; }
+    .copy-btn.copied { background: #16A34A; }
+
+    .lock-screen { display: block; }
+    .main-screen { display: none; }
+    .main-screen.show { display: block; }
+    .lock-screen.hide { display: none; }
+
+    .error { color: #DC2626; font-size: 12px; margin-top: -12px; margin-bottom: 12px; }
+
+    .divider { border: none; border-top: 1px solid #F3F4F6; margin: 20px 0; }
+
+    .links-history { margin-top: 8px; }
+    .link-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #F3F4F6;
+      gap: 8px;
+    }
+    .link-item:last-child { border-bottom: none; }
+    .link-name { font-size: 13px; font-weight: 500; color: #111827; }
+    .link-meta { font-size: 11px; color: #A3A3A3; }
+    .link-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .mini-btn {
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
+    }
+    .mini-copy { background: #F3F4F6; color: #374151; }
+    .mini-copy:hover { background: #E5E7EB; }
+    .mini-del { background: #FEE2E2; color: #DC2626; }
+    .mini-del:hover { background: #FECACA; }
+    .history-title { font-size: 12px; font-weight: 600; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+    .empty-history { font-size: 13px; color: #A3A3A3; text-align: center; padding: 16px 0; }
+    .badge-active { background: #D1FAE5; color: #065F46; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 600; }
+    .badge-expired { background: #FEE2E2; color: #991B1B; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <div class="logo">
+    <div class="logo-icon">S</div>
+    <div>
+      <div class="logo-text">StayPilot</div>
+      <div class="logo-sub">Générateur de liens démo</div>
+    </div>
+  </div>
+
+  <!-- Écran de verrouillage -->
+  <div class="lock-screen" id="lockScreen">
+    <h2>Accès restreint</h2>
+    <p class="subtitle">Entrez le mot de passe pour accéder au générateur de liens.</p>
+    <label for="pwd">Mot de passe</label>
+    <input type="password" id="pwd" placeholder="••••••••" autocomplete="current-password" />
+    <p class="error" id="pwdError" style="display:none">Mot de passe incorrect.</p>
+    <button class="btn" onclick="unlock()">Déverrouiller</button>
+  </div>
+
+  <!-- Interface principale -->
+  <div class="main-screen" id="mainScreen">
+    <h2>Nouveau lien démo</h2>
+    <p class="subtitle">Générez un lien personnalisé pour votre prospect. Il expirera automatiquement.</p>
+
+    <label for="prospect">Nom du prospect</label>
+    <input type="text" id="prospect" placeholder="ex. Thomas Wagner" maxlength="40" />
+
+    <label for="duration">Durée de validité</label>
+    <select id="duration">
+      <option value="1">24 heures</option>
+      <option value="3" selected>3 jours</option>
+      <option value="7">7 jours</option>
+      <option value="30">30 jours</option>
+    </select>
+
+    <button class="btn" onclick="generate()">Générer le lien</button>
+
+    <div class="result-box" id="resultBox">
+      <div class="result-label">🔗 Lien prêt à envoyer</div>
+      <div class="result-url" id="resultUrl"></div>
+      <button class="copy-btn" id="copyBtn" onclick="copyUrl()">Copier le lien</button>
+    </div>
+
+    <hr class="divider" />
+
+    <div class="history-title">Liens générés</div>
+    <div class="links-history" id="linksHistory"></div>
+  </div>
+</div>
+
+<script>
+  // ── Config ─────────────────────────────────────────────────────────────────
+  const DEMO_BASE_URL = window.location.origin + '/index.html';
+  const SECRET = 'SP-DEMO-2026-staypilot-x9k2m';   // ← même clé dans index.html
+  const PASSWORD_HASH = '5e5c7c0c66af3abca0a9abd1a52a0e9d3e7f2b4c5d6e7f8a9b0c1d2e3f4a5b6c'; // hash de "StayPilot2026"
+  const STORAGE_KEY = 'sp_demo_links';
+
+  // ── Hash simplifié (FNV-like) pour le mot de passe ─────────────────────────
+  // On utilise SubtleCrypto SHA-256 pour vérifier le password
+  async function sha256hex(str) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  // ── HMAC-SHA256 ───────────────────────────────────────────────────────────
+  async function hmacSign(message) {
+    const enc = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      'raw', enc.encode(SECRET),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false, ['sign']
+    );
+    const sig = await crypto.subtle.sign('HMAC', key, enc.encode(message));
+    return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  // ── Unlock ────────────────────────────────────────────────────────────────
+  async function unlock() {
+    const pwd = document.getElementById('pwd').value;
+    if (!pwd) return;
+    const hash = await sha256hex(pwd);
+    // Le vrai mot de passe est "StayPilot2026"
+    // sha256("StayPilot2026") = on le compare directement
+    const expected = await sha256hex('StayPilot2026');
+    if (hash === expected) {
+      document.getElementById('lockScreen').classList.add('hide');
+      document.getElementById('mainScreen').classList.add('show');
+      sessionStorage.setItem('sp_unlocked', '1');
+      renderHistory();
+    } else {
+      document.getElementById('pwdError').style.display = 'block';
+    }
+  }
+
+  // Rester déverrouillé pendant la session
+  if (sessionStorage.getItem('sp_unlocked')) {
+    document.getElementById('lockScreen').classList.add('hide');
+    document.getElementById('mainScreen').classList.add('show');
+    document.addEventListener('DOMContentLoaded', renderHistory);
+  }
+
+  document.getElementById('pwd').addEventListener('keydown', e => {
+    if (e.key === 'Enter') unlock();
+  });
+
+  // ── Generate ──────────────────────────────────────────────────────────────
+  async function generate() {
+    const name = document.getElementById('prospect').value.trim();
+    const days = parseInt(document.getElementById('duration').value);
+    if (!name) { alert('Entrez un nom de prospect.'); return; }
+
+    const exp = Math.floor(Date.now() / 1000) + days * 86400;
+    const msg = `${name}:${exp}`;
+    const sig = await hmacSign(msg);
+
+    const url = `${DEMO_BASE_URL}?p=${encodeURIComponent(name)}&exp=${exp}&sig=${sig}`;
+
+    document.getElementById('resultUrl').textContent = url;
+    document.getElementById('resultBox').classList.add('show');
+    document.getElementById('copyBtn').textContent = 'Copier le lien';
+    document.getElementById('copyBtn').classList.remove('copied');
+
+    // Sauvegarde dans localStorage
+    const links = getLinks();
+    links.unshift({ name, exp, url, created: Date.now() });
+    saveLinks(links.slice(0, 20)); // max 20
+    renderHistory();
+  }
+
+  function copyUrl() {
+    const url = document.getElementById('resultUrl').textContent;
+    navigator.clipboard.writeText(url).then(() => {
+      const btn = document.getElementById('copyBtn');
+      btn.textContent = '✓ Copié !';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = 'Copier le lien';
+        btn.classList.remove('copied');
+      }, 2000);
+    });
+  }
+
+  // ── History ───────────────────────────────────────────────────────────────
+  function getLinks() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; }
+  }
+  function saveLinks(links) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(links));
+  }
+
+  function renderHistory() {
+    const links = getLinks();
+    const el = document.getElementById('linksHistory');
+    if (!links.length) {
+      el.innerHTML = '<div class="empty-history">Aucun lien généré pour l\'instant.</div>';
+      return;
+    }
+    const now = Math.floor(Date.now() / 1000);
+    el.innerHTML = links.map((l, i) => {
+      const active = l.exp > now;
+      const expDate = new Date(l.exp * 1000).toLocaleDateString('fr-FR', { day:'numeric', month:'short', year:'numeric' });
+      const badge = active
+        ? `<span class="badge-active">Actif</span>`
+        : `<span class="badge-expired">Expiré</span>`;
+      return `
+        <div class="link-item">
+          <div>
+            <div class="link-name">${escHtml(l.name)} ${badge}</div>
+            <div class="link-meta">Expire le ${expDate}</div>
+          </div>
+          <div class="link-actions">
+            <button class="mini-btn mini-copy" onclick="copyLink(${i})">Copier</button>
+            <button class="mini-btn mini-del" onclick="deleteLink(${i})">✕</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function copyLink(i) {
+    const links = getLinks();
+    navigator.clipboard.writeText(links[i].url).then(() => {
+      const btns = document.querySelectorAll('.mini-copy');
+      btns[i].textContent = '✓';
+      setTimeout(() => { btns[i].textContent = 'Copier'; }, 1500);
+    });
+  }
+
+  function deleteLink(i) {
+    const links = getLinks();
+    links.splice(i, 1);
+    saveLinks(links);
+    renderHistory();
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+</script>
+</body>
+</html>
