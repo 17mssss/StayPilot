@@ -2,10 +2,10 @@ import { motion, useMotionValue, useMotionTemplate, useAnimationFrame } from "fr
 import { Check, Mail } from "lucide-react";
 import React, { useState } from "react";
 
-// 🔗 Stripe Payment Links (test mode — à passer en live après activation du compte)
+// 🔗 Stripe Payment Links (live)
 const STRIPE_LINKS = {
-  starter:  "https://buy.stripe.com/test_fZubJ34CN8iraqx0se6Vq00",
-  pro:      "https://buy.stripe.com/test_8x2fZjb1b8ir8ip7UG6Vq01",
+  starter:  "https://buy.stripe.com/00w6oGb7ibfzecx3vJ5c400",
+  pro:      "https://buy.stripe.com/eVq8wO6R283n7O93vJ5c401",
 };
 
 const plans = [
