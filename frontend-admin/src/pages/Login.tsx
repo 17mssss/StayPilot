@@ -75,7 +75,7 @@ export default function Login() {
       if (checkRes.data.trusted) {
         // ✅ Appareil connu → accès direct
         setLoading(false)
-        navigate('/')
+        navigate('/portal')
         return
       }
 
@@ -99,12 +99,12 @@ export default function Login() {
       // on laisse passer pour ne pas bloquer le client
       console.warn('[LOGIN] Device check unavailable — bypassing 2FA')
       setLoading(false)
-      navigate('/')
+      navigate('/portal')
     }
   }
 
   const handleOtpSuccess = () => {
-    navigate('/')
+    navigate('/portal')
   }
 
   // ── Écran OTP ─────────────────────────────────────────────────────────────
