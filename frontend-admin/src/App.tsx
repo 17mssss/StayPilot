@@ -76,6 +76,7 @@ import PortailInvestisseur from './pages/PortailInvestisseur'
 import EquipeMenage from './pages/EquipeMenage'
 import ExportFEC from './pages/ExportFEC'
 import Demo from './pages/Demo'
+import Portal from './pages/Portal'
 
 // ── Toast notification ────────────────────────────────────────────────────────
 function AgentToast({ name, onClose }: { name: string; onClose: () => void }) {
@@ -884,10 +885,11 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/login"    element={(user || isDemo) ? <Navigate to="/" replace /> : <Login />} />
-      <Route path="/register" element={(user || isDemo) ? <Navigate to="/" replace /> : <Register />} />
+      <Route path="/login"    element={(user || isDemo) ? <Navigate to="/portal" replace /> : <Login />} />
+      <Route path="/register" element={(user || isDemo) ? <Navigate to="/portal" replace /> : <Register />} />
       <Route path="/demo"     element={<Demo />} />
       <Route path="/portail/:token" element={<PortailInvestisseur />} />
+      <Route path="/portal" element={(user || isDemo) ? <Portal /> : <Navigate to="/login" replace />} />
 
       <Route element={<Layout />}>
         <Route path="/"                        element={<Dashboard />} />
