@@ -176,7 +176,7 @@ export default function EquipeMenage() {
   const [agents, setAgents] = useState<AgentRow[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
-  const [updating, setUpdating] = useState<string | null>(null)hh
+  const [updating, setUpdating] = useState<string | null>(null)
   const [conciergeId, setConciergeId] = useState<string | null>(null)
 
   // Charger l'ID conciergerie de cet admin
