@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Settings, Eye, EyeOff, CheckCircle, FlaskConical, PlayCircle, Copy, Check, RefreshCw, Pencil, X, Save } from 'lucide-react'
+import { Settings, Eye, EyeOff, CheckCircle, FlaskConical, PlayCircle, Copy, Check, RefreshCw, Pencil, X, Save, Shield, Smartphone } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { resetTour } from '../components/OnboardingTour'
 import { supabase } from '../lib/supabase'
@@ -17,12 +17,12 @@ function genCode(n = 6): string {
 // ── Composants ────────────────────────────────────────────────────────────────
 
 const FONTS = [
-  { id: 'Inter',        label: 'Inter',         preview: 'Aa',  desc: 'Moderne · Par défaut' },
-  { id: 'DM Sans',      label: 'DM Sans',        preview: 'Aa',  desc: 'Minimaliste · Épuré' },
-  { id: 'Poppins',      label: 'Poppins',        preview: 'Aa',  desc: 'Arrondi · Convivial' },
-  { id: 'Lato',         label: 'Lato',           preview: 'Aa',  desc: 'Classique · Lisible' },
-  { id: 'Merriweather', label: 'Merriweather',   preview: 'Aa',  desc: 'Serif · Élégant' },
-  { id: 'Fira Code',    label: 'Fira Code',      preview: 'Aa',  desc: 'Monospace · Technique' },
+  { id: 'Inter', label: 'Inter', preview: 'Aa', desc: 'Moderne · Par défaut' },
+  { id: 'DM Sans', label: 'DM Sans', preview: 'Aa', desc: 'Minimaliste · Épuré' },
+  { id: 'Poppins', label: 'Poppins', preview: 'Aa', desc: 'Arrondi · Convivial' },
+  { id: 'Lato', label: 'Lato', preview: 'Aa', desc: 'Classique · Lisible' },
+  { id: 'Merriweather', label: 'Merriweather', preview: 'Aa', desc: 'Serif · Élégant' },
+  { id: 'Fira Code', label: 'Fira Code', preview: 'Aa', desc: 'Monospace · Technique' },
 ]
 
 interface FieldProps {
@@ -132,7 +132,7 @@ export default function Parametres() {
     () => localStorage.getItem('staypilot_font') ?? 'Inter'
   )
 
-  // ── API Keys (depuis backend) ─────────────────────────────────────────────
+  // ── API Keys ──────────────────────────────────────────────────────────────
   const [apiKeys, setApiKeys] = useState({
     sendgrid_api_key: '', sendgrid_from_email: '', sendgrid_from_name: '',
     twilio_account_sid: '', twilio_auth_token: '', twilio_from_number: '',
@@ -183,7 +183,90 @@ export default function Parametres() {
   const [pwdSaving, setPwdSaving] = useState(false)
   const [pwdMsg, setPwdMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
 
-  // Profil conciergerie (Supabase)
+  // ── 2FA TOTP ──────────────────────────────────────────────────────────────
+  const [totpFactors, setTotpFactors] = useState<Array<{ id: string; status: string; factor_type: string }>>([])
+  const [totpLoading, setTotpLoading] = useState(true)
+  const [enrolling, setEnrolling] = useState(false)
+  const [enrollData, setEnrollData] = useState<{ factorId: string; qrCode: string; secret: string } | null>(null)
+  const [totpCode, setTotpCode] = useState('')
+  const [totpVerifying, setTotpVerifying] = useState(false)
+  const [totpMsg, setTotpMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
+  const [unenrolling, setUnenrolling] = useState(false)
+  const [confirmUnenroll, setConfirmUnenroll] = useState(false)
+  const [secretVisible, setSecretVisible] = useState(false)
+
+  const loadTotpFactors = async () => {
+    setTotpLoading(true)
+    try {
+      const { data } = await supabase.auth.mfa.listFactors()
+      setTotpFactors((data?.totp ?? []) as Array<{ id: string; status: string; factor_type: string }>)
+    } catch {
+      setTotpFactors([])
+    }
+    setTotpLoading(false)
+  }
+
+  useEffect(() => {
+    if (user) loadTotpFactors()
+  }, [user])
+
+  const verifiedTotp = totpFactors.find(f => f.status === 'verified')
+
+  const handleStartEnroll = async () => {
+    setTotpMsg(null)
+    setEnrolling(true)
+    try {
+      const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp' })
+      if (error || !data) throw error ?? new Error('enroll failed')
+      setEnrollData({
+        factorId: data.id,
+        qrCode: (data as unknown as { totp: { qr_code: string; secret: string } }).totp.qr_code,
+        secret: (data as unknown as { totp: { qr_code: string; secret: string } }).totp.secret,
+      })
+      setTotpCode('')
+    } catch {
+      setTotpMsg({ type: 'err', text: "Erreur lors de l'initialisation. Réessayez." })
+    }
+    setEnrolling(false)
+  }
+
+  const handleVerifyEnroll = async () => {
+    if (!enrollData) return
+    setTotpMsg(null)
+    setTotpVerifying(true)
+    try {
+      const { error } = await supabase.auth.mfa.challengeAndVerify({
+        factorId: enrollData.factorId,
+        code: totpCode,
+      })
+      if (error) throw error
+      setEnrollData(null)
+      setTotpCode('')
+      setTotpMsg({ type: 'ok', text: 'Authentification à deux facteurs activée ✓' })
+      await loadTotpFactors()
+    } catch {
+      setTotpMsg({ type: 'err', text: "Code invalide. Vérifiez votre application d'authentification." })
+    }
+    setTotpVerifying(false)
+  }
+
+  const handleUnenroll = async () => {
+    if (!verifiedTotp) return
+    setUnenrolling(true)
+    setTotpMsg(null)
+    try {
+      const { error } = await supabase.auth.mfa.unenroll({ factorId: verifiedTotp.id })
+      if (error) throw error
+      setTotpMsg({ type: 'ok', text: '2FA désactivée.' })
+      setConfirmUnenroll(false)
+      await loadTotpFactors()
+    } catch {
+      setTotpMsg({ type: 'err', text: 'Erreur lors de la désactivation.' })
+    }
+    setUnenrolling(false)
+  }
+
+  // ── Profil conciergerie ───────────────────────────────────────────────────
   const [conciergeProfileId, setConciergeProfileId] = useState<string | null>(null)
   const [conciergeCode, setConciergeCode] = useState('')
   const [conciergeLoading, setConciergeLoading] = useState(true)
@@ -196,14 +279,14 @@ export default function Parametres() {
   }
 
   const [config, setConfig] = useState({
-    clientName:         import.meta.env.VITE_CLIENT_NAME ?? '',
-    clientPhone:        import.meta.env.VITE_CLIENT_PHONE ?? '',
-    clientAddress:      import.meta.env.VITE_CLIENT_ADDRESS ?? '',
-    clientSiret:        import.meta.env.VITE_CLIENT_SIRET ?? '',
-    commissionRate:     import.meta.env.VITE_COMMISSION_RATE ?? '20',
-    superhoteApiKey:    '',
-    twilioFrom:         '',
-    sendgridFrom:       '',
+    clientName: import.meta.env.VITE_CLIENT_NAME ?? '',
+    clientPhone: import.meta.env.VITE_CLIENT_PHONE ?? '',
+    clientAddress: import.meta.env.VITE_CLIENT_ADDRESS ?? '',
+    clientSiret: import.meta.env.VITE_CLIENT_SIRET ?? '',
+    commissionRate: import.meta.env.VITE_COMMISSION_RATE ?? '20',
+    superhoteApiKey: '',
+    twilioFrom: '',
+    sendgridFrom: '',
   })
 
   const set = (key: string) => (v: string) => setConfig((c) => ({ ...c, [key]: v }))
@@ -232,7 +315,6 @@ export default function Parametres() {
         setConciergeCode(data.concierge_code)
         setConfig(c => ({ ...c, clientName: data.company_name || c.clientName }))
       } else {
-        // Créer un profil initial avec un code auto-généré
         const newCode = genCode(6)
         const { data: created, error: createErr } = await supabase
           .from('concierge_profiles')
@@ -272,22 +354,19 @@ export default function Parametres() {
 
   // ── Sauvegarde globale ────────────────────────────────────────────────────
   const handleSave = async () => {
-    // Mettre à jour le nom de la conciergerie dans Supabase
     if (user && conciergeProfileId) {
       await supabase
         .from('concierge_profiles')
         .update({ company_name: config.clientName })
         .eq('id', conciergeProfileId)
     }
-
     setSaved(true)
     setTimeout(() => setSaved(false), 3000)
   }
 
   const firstName = user?.user_metadata?.first_name ?? ''
-  const lastName  = user?.user_metadata?.last_name  ?? ''
+  const lastName = user?.user_metadata?.last_name ?? ''
 
-  // Initialiser les champs profil à l'ouverture du mode édition
   const startEditProfile = () => {
     setProfileFirstName(firstName)
     setProfileLastName(lastName)
@@ -467,6 +546,159 @@ export default function Parametres() {
         )}
       </Section>
 
+      {/* ── Sécurité — 2FA TOTP ── */}
+      <Section title="Sécurité — Authentification à deux facteurs">
+        {totpLoading ? (
+          <div className="flex items-center gap-2 text-sm text-muted">
+            <RefreshCw size={14} className="animate-spin" /> Chargement…
+          </div>
+        ) : verifiedTotp ? (
+          /* ── Activée ── */
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-full px-2.5 py-1">
+                <Shield size={11} /> Activée
+              </span>
+            </div>
+            <p className="text-sm text-muted leading-relaxed">
+              Votre compte est protégé par une application d'authentification. À chaque connexion sur un nouvel appareil, vous devrez saisir un code à 6 chiffres.
+            </p>
+            {totpMsg && (
+              <p className={`text-sm ${totpMsg.type === 'ok' ? 'text-green-600' : 'text-red-500'}`}>{totpMsg.text}</p>
+            )}
+            {!confirmUnenroll ? (
+              <button
+                onClick={() => setConfirmUnenroll(true)}
+                className="flex items-center gap-1.5 text-sm text-red-500 border border-red-200 rounded-lg px-3 py-2 hover:bg-red-50 transition-colors"
+              >
+                Désactiver la 2FA
+              </button>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-sm text-red-600 font-medium">Confirmer la désactivation ?</p>
+                <p className="text-xs text-muted">Votre compte sera moins sécurisé sans la double authentification.</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleUnenroll}
+                    disabled={unenrolling}
+                    className="text-sm bg-red-500 text-white rounded-lg px-4 py-2 hover:bg-red-600 transition-colors disabled:opacity-60"
+                  >
+                    {unenrolling ? 'Désactivation…' : 'Oui, désactiver'}
+                  </button>
+                  <button
+                    onClick={() => setConfirmUnenroll(false)}
+                    className="text-sm text-muted border border-border rounded-lg px-3 py-2 hover:bg-bg"
+                  >
+                    Annuler
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : enrollData ? (
+          /* ── Enrôlement en cours ── */
+          <div className="space-y-4">
+            <div className="flex items-start gap-3 bg-primary/5 border border-primary/20 rounded-xl p-3">
+              <Smartphone size={16} className="text-primary mt-0.5 shrink-0" />
+              <p className="text-sm text-dark leading-relaxed">
+                Scannez ce QR code avec votre application d'authentification<br />
+                <span className="text-xs text-muted">(Google Authenticator, Authy, 1Password, Microsoft Authenticator…)</span>
+              </p>
+            </div>
+
+            {/* QR Code */}
+            <div className="flex justify-center">
+              <div className="p-3 bg-white rounded-2xl border border-border shadow-sm">
+                <img src={enrollData.qrCode} alt="QR Code 2FA" className="w-44 h-44" />
+              </div>
+            </div>
+
+            {/* Secret manuel */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-xs text-muted">Ou entrez ce code manuellement :</p>
+                <button
+                  onClick={() => setSecretVisible(v => !v)}
+                  className="text-xs text-primary hover:underline"
+                >
+                  {secretVisible ? 'Masquer' : 'Afficher'}
+                </button>
+              </div>
+              {secretVisible && (
+                <code className="block text-xs font-mono bg-bg border border-border rounded-lg px-3 py-2 tracking-widest text-dark break-all select-all">
+                  {enrollData.secret}
+                </code>
+              )}
+            </div>
+
+            {/* Saisie du code */}
+            <div>
+              <label className="block text-xs font-medium text-dark mb-1.5">
+                Code de vérification (6 chiffres)
+              </label>
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                value={totpCode}
+                onChange={e => setTotpCode(e.target.value.replace(/\D/g, ''))}
+                placeholder="000000"
+                autoFocus
+                className="w-36 px-3 py-2.5 text-center text-lg font-mono tracking-[0.3em] border border-border rounded-lg focus:outline-none focus:border-primary bg-bg text-dark"
+              />
+            </div>
+
+            {totpMsg && (
+              <p className={`text-sm ${totpMsg.type === 'ok' ? 'text-green-600' : 'text-red-500'}`}>{totpMsg.text}</p>
+            )}
+
+            <div className="flex gap-2">
+              <button
+                onClick={handleVerifyEnroll}
+                disabled={totpVerifying || totpCode.length !== 6}
+                className="flex items-center gap-1.5 text-sm bg-primary text-white rounded-lg px-4 py-2 hover:bg-primary-dark transition-colors disabled:opacity-60"
+              >
+                <Shield size={13} />
+                {totpVerifying ? 'Vérification…' : 'Vérifier et activer'}
+              </button>
+              <button
+                onClick={() => { setEnrollData(null); setTotpCode(''); setTotpMsg(null); setSecretVisible(false) }}
+                className="flex items-center gap-1.5 text-sm text-muted border border-border rounded-lg px-3 py-2 hover:bg-bg"
+              >
+                <X size={13} /> Annuler
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* ── Non activée ── */
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted bg-bg border border-border rounded-full px-2.5 py-1">
+                Non activée
+              </span>
+            </div>
+            <p className="text-sm text-muted leading-relaxed">
+              Protégez votre compte avec une application d'authentification. En cas de vol de mot de passe, votre compte reste inaccessible sans le code.
+            </p>
+            {totpMsg && (
+              <p className={`text-sm ${totpMsg.type === 'ok' ? 'text-green-600' : 'text-red-500'}`}>{totpMsg.text}</p>
+            )}
+            <button
+              onClick={handleStartEnroll}
+              disabled={enrolling}
+              className="flex items-center gap-1.5 text-sm bg-primary text-white rounded-lg px-4 py-2 hover:bg-primary-dark transition-colors disabled:opacity-60"
+            >
+              <Shield size={14} />
+              {enrolling ? 'Chargement…' : 'Activer la 2FA'}
+            </button>
+            <p className="text-xs text-muted">
+              Compatible avec : Google Authenticator, Authy, 1Password, Microsoft Authenticator…
+            </p>
+          </div>
+        )}
+      </Section>
+
+      {/* ── Apparence ── */}
       <Section title="Apparence">
         <div>
           <label className="block text-sm font-medium text-dark mb-3">Police d'écriture</label>
@@ -506,6 +738,7 @@ export default function Parametres() {
         </div>
       </Section>
 
+      {/* ── Identité ── */}
       <Section title="Identité de la conciergerie">
         <Field label="Nom de la conciergerie" value={config.clientName} onChange={set('clientName')} placeholder="Ma Conciergerie" />
         <Field label="Téléphone" value={config.clientPhone} onChange={set('clientPhone')} placeholder="+33 6 00 00 00 00" />
@@ -519,8 +752,6 @@ export default function Parametres() {
             <span className="text-sm text-muted">% appliqué sur les revenus</span>
           </div>
         </div>
-
-        {/* ── Code CleanPilot ── */}
         <div className="pt-3 border-t border-border">
           {conciergeLoading ? (
             <div className="flex items-center gap-2 text-sm text-muted">
@@ -536,6 +767,7 @@ export default function Parametres() {
         </div>
       </Section>
 
+      {/* ── API Keys ── */}
       <Section title="Intégrations & clés API">
         <p className="text-xs text-muted -mt-1">Ces clés sont stockées de façon sécurisée et ne sont jamais affichées en clair après sauvegarde.</p>
 
@@ -585,6 +817,7 @@ export default function Parametres() {
         </button>
       </Section>
 
+      {/* ── Outils développeur ── */}
       <Section title="Outils développeur">
         <div className="flex items-center justify-between py-2">
           <div>
