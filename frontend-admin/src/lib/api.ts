@@ -1,5 +1,7 @@
 import axios from 'axios'
+import type { AxiosResponse, InternalAxiosRequestConfig } from 'axios'
 import { supabase } from './supabase'
+import { getDemoMockData } from './demoMocks'
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
@@ -22,18 +24,53 @@ function getDemoToken(): string | null {
   return token
 }
 
-// Attach Supabase JWT to every request
-// Si un token démo valide existe, il prend priorité sur la session Supabase.
+// ── Adapter mock pour la démo (sans appel réseau) ─────────────────────────────
+function demoAdapter(config: InternalAxiosRequestConfig): Promise<AxiosResponse> {
+  const path   = (config.url || '').replace(/^\/api/, '')
+  const method = (config.method || 'get').toLowerCase()
+
+  // Bloquer les écritures
+  if (['post', 'put', 'patch', 'delete'].includes(method)) {
+    const err: { response: AxiosResponse; message: string } = {
+      message: 'Action non disponible en mode démo',
+      response: {
+        data: { success: false, demo: true, error: 'Action non disponible en mode démo' },
+        status: 403,
+        statusText: 'Forbidden',
+        headers: {},
+        config,
+      } as AxiosResponse,
+    }
+    return Promise.reject(err)
+  }
+
+  // Retourner les données mock
+  const mockData = getDemoMockData(path)
+  return Promise.resolve({
+    data: { success: true, data: mockData },
+    status: 200,
+    statusText: 'OK',
+    headers: {},
+    config,
+    request: {},
+  } as AxiosResponse)
+}
+
+// ── Intercepteur request ──────────────────────────────────────────────────────
+// Si un token démo valide existe, utiliser l'adapter mock directement.
 api.interceptors.request.use(async (config) => {
   const demoToken = getDemoToken()
   if (demoToken) {
-    config.headers.Authorization = `Bearer demo_${demoToken}`
-  } else {
-    const { data: { session } } = await supabase.auth.getSession()
-    if (session?.access_token) {
-      config.headers.Authorization = `Bearer ${session.access_token}`
-    }
+    // Remplacer l'adapter par le mock — aucun appel réseau
+    config.adapter = demoAdapter
+    return config
   }
+
+  const { data: { session } } = await supabase.auth.getSession()
+  if (session?.access_token) {
+    config.headers.Authorization = `Bearer ${session.access_token}`
+  }
+
   // Si le body est FormData, supprimer le Content-Type par défaut
   // pour laisser axios générer automatiquement le bon multipart/form-data avec boundary
   if (config.data instanceof FormData) {
@@ -42,6 +79,7 @@ api.interceptors.request.use(async (config) => {
   return config
 })
 
+// ── Intercepteur response ─────────────────────────────────────────────────────
 // Unwrap { success: true, data: ... } responses automatically
 api.interceptors.response.use(
   (response) => {
