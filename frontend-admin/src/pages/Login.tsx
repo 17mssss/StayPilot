@@ -105,7 +105,7 @@ function AnimatedBackground() {
   return (
     <>
       <style>{BLOB_CSS}</style>
-      <div className="fixed inset-0 -z-10 overflow-hidden">
+      <div className="fixed inset-0 z-0 overflow-hidden">
         {/* Base gradient neutre */}
         <div className="absolute inset-0 bg-gradient-to-br from-slate-100 via-white to-blue-50/50" />
         {/* Blob orange – haut gauche */}
