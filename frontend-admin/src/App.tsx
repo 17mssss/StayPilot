@@ -38,6 +38,7 @@ import {
   Bell,
   CheckCheck,
   BrushIcon,
+  ExternalLink,
 } from 'lucide-react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { DemoProvider, useDemo } from './contexts/DemoContext'
@@ -702,6 +703,20 @@ function Sidebar({ onClose, pendingCount = 0 }: { onClose?: () => void; pendingC
               {plan.name}
             </span>
           </NavLink>
+        )}
+
+        {/* CleanPilot — accès rapide (Pro+) */}
+        {(planId === 'pro' || planId === 'business' || isDemo) && (
+          <a
+            href="https://cleanpilot.staypilot.cc"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-muted hover:bg-border-light hover:text-dark transition-colors w-full"
+          >
+            <BrushIcon size={15} className="flex-shrink-0 text-orange-500" />
+            <span className="flex-1 truncate">CleanPilot</span>
+            <ExternalLink size={11} className="flex-shrink-0 opacity-40" />
+          </a>
         )}
 
         <NavLink
