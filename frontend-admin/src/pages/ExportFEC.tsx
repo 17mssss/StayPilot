@@ -269,7 +269,7 @@ export default function ExportFEC() {
 
   if (!isEnterprise) {
     return (
-      <div className="max-w-2xl">
+      <div className="max-w-2xl mx-auto">
         <div className="bg-surface rounded-xl shadow-card p-8 text-center space-y-4">
           <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center mx-auto">
             <Calculator size={22} className="text-primary" />
@@ -294,7 +294,7 @@ export default function ExportFEC() {
     new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n)
 
   return (
-    <div className="max-w-2xl space-y-5">
+    <div className="max-w-2xl space-y-5 mx-auto">
 
       {/* Description */}
       <div className="bg-surface rounded-xl shadow-card p-5">
