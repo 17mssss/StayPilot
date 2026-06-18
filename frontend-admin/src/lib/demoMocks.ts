@@ -120,9 +120,9 @@ const INVOICES = [
 
 // ── Menage / Équipe ───────────────────────────────────────────────────────────
 const MENAGE_TASKS = [
-  { id: 'task-001', logement_id: 'b1000000-0000-0000-0000-000000000001', logement_nom: 'Studio Montmartre', agent_nom: 'Marie Dupont', date_mission: '2026-06-23', heure_debut: '10:00', statut: 'planifie', type: 'depart' },
-  { id: 'task-002', logement_id: 'b1000000-0000-0000-0000-000000000002', logement_nom: 'Appartement Marais', agent_nom: 'Lucas Martin', date_mission: '2026-06-22', heure_debut: '11:00', statut: 'en_cours', type: 'depart' },
-  { id: 'task-003', logement_id: 'b1000000-0000-0000-0000-000000000001', logement_nom: 'Studio Montmartre', agent_nom: 'Marie Dupont', date_mission: '2026-06-20', heure_debut: '10:00', statut: 'termine', type: 'arrivee' },
+  { reservation_id: 'task-001', guest_name: 'Emma Leroy', property: 'Studio Montmartre', checkout: '2026-06-23', checkin_next: '2026-06-24', status: 'pending', notes: null },
+  { reservation_id: 'task-002', guest_name: 'David Smith', property: 'Appartement Marais', checkout: '2026-06-22', checkin_next: '2026-06-23', status: 'in_progress', notes: null },
+  { reservation_id: 'task-003', guest_name: 'Carlos Mendez', property: 'Studio Montmartre', checkout: '2026-06-20', checkin_next: null, status: 'done', notes: null },
 ]
 
 const MENAGE_STATS = {
@@ -223,7 +223,7 @@ export function getDemoMockData(url: string): unknown {
   }
 
   // Réservations
-  if (cleanUrl === '/reservations' || cleanUrl === '/reservations/') return { data: RESERVATIONS, total: RESERVATIONS.length, page: 1, limit: 50 }
+  if (cleanUrl === '/reservations' || cleanUrl === '/reservations/') return RESERVATIONS
   if (cleanUrl.match(/^\/reservations\/c1[0-9a-f-]+$/)) {
     const id = cleanUrl.split('/').pop()
     return RESERVATIONS.find(r => r.id === id) ?? null
@@ -271,6 +271,17 @@ export function getDemoMockData(url: string): unknown {
   if (cleanUrl === '/inbox/unread-count') return { count: INBOX.filter(m => m.statut === 'non_lu').length }
 
   // Revenue / Reports
+  if (cleanUrl.startsWith('/revenues/monthly')) {
+    const yr = new Date().getFullYear()
+    return [
+      { month: `${yr}-01`, gross: 2625, net: 2100, commission: 525, reservations: 3 },
+      { month: `${yr}-02`, gross: 3063, net: 2450, commission: 613, reservations: 3 },
+      { month: `${yr}-03`, gross: 4000, net: 3200, commission: 800, reservations: 4 },
+      { month: `${yr}-04`, gross: 5125, net: 4100, commission: 1025, reservations: 5 },
+      { month: `${yr}-05`, gross: 6625, net: 5300, commission: 1325, reservations: 6 },
+      { month: `${yr}-06`, gross: 9000, net: 7200, commission: 1800, reservations: 8 },
+    ]
+  }
   if (cleanUrl === '/revenues' || cleanUrl === '/revenues/summary') return REVENUE_SUMMARY
   if (cleanUrl === '/reports') return REPORTS
 
