@@ -9,7 +9,30 @@ import OtpVerify from './OtpVerify'
 import api from '../lib/api'
 import { supabase } from '../lib/supabase'
 
-// ── Device ID ─────────────────────────────────────────────────────────────────
+// ââ Styles animations fond âââââââââââââââââââââââââââââââââââââââââââââââââââââ
+const BLOB_CSS = `
+  @keyframes sp-blob-1 {
+    0%,100% { transform: translate(0,0) scale(1); }
+    33%      { transform: translate(45px,-65px) scale(1.08); }
+    66%      { transform: translate(-28px,28px) scale(0.93); }
+  }
+  @keyframes sp-blob-2 {
+    0%,100% { transform: translate(0,0) scale(1); }
+    33%      { transform: translate(-55px,40px) scale(1.06); }
+    66%      { transform: translate(32px,-50px) scale(0.95); }
+  }
+  @keyframes sp-blob-3 {
+    0%,100% { transform: translate(0,0) scale(1); }
+    50%      { transform: translate(25px,35px) scale(1.12); }
+  }
+  @keyframes sp-blob-4 {
+    0%,100% { transform: translate(0,0) scale(1); }
+    40%      { transform: translate(-35px,-22px) scale(0.91); }
+    80%      { transform: translate(22px,18px) scale(1.06); }
+  }
+`
+
+// ââ Device ID ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 const DEVICE_KEY = 'sp_device_id'
 function getOrCreateDeviceId(): string {
   let id = localStorage.getItem(DEVICE_KEY)
@@ -23,7 +46,7 @@ function getOrCreateDeviceId(): string {
   return id
 }
 
-// ── Espaces ───────────────────────────────────────────────────────────────────
+// ââ Espaces ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 const SPACES = [
   {
     id: 'concierge',
@@ -31,36 +54,36 @@ const SPACES = [
     title: 'Espace Conciergerie',
     subtitle: 'Pilotez vos logements',
     description:
-      'Synchronisation multi-plateformes, messagerie automatique, facturation propriétaires et planning centralisé.',
-    gradient: 'from-orange-500/10 to-orange-400/5 border-orange-400/25',
-    iconBg: 'bg-orange-50',
+      'Synchronisation multi-plateformes, messagerie automatique, facturation propriÃ©taires et planning centralisÃ©.',
+    gradient: 'from-orange-400/30 to-orange-300/10 border-orange-400/40',
+    iconBg: 'bg-orange-100',
     iconColor: 'text-primary',
   },
   {
     id: 'owner',
     Icon: Users,
-    title: 'Portail Propriétaire',
+    title: 'Portail PropriÃ©taire',
     subtitle: 'Suivez vos revenus',
     description:
-      'Revenus en temps réel, calendrier de réservations, documents et rapports — accessible 24h/24.',
-    gradient: 'from-blue-500/10 to-blue-400/5 border-blue-400/25',
-    iconBg: 'bg-blue-50',
+      'Revenus en temps rÃ©el, calendrier de rÃ©servations, documents et rapports â accessible 24h/24.',
+    gradient: 'from-blue-400/30 to-blue-300/10 border-blue-400/40',
+    iconBg: 'bg-blue-100',
     iconColor: 'text-blue-500',
   },
   {
     id: 'agent',
     Icon: Wrench,
     title: 'Espace Agents',
-    subtitle: 'Gérez vos missions',
+    subtitle: 'GÃ©rez vos missions',
     description:
-      'Missions ménage, check-lists interactives et upload photos directement depuis le terrain.',
-    gradient: 'from-emerald-500/10 to-emerald-400/5 border-emerald-400/25',
-    iconBg: 'bg-emerald-50',
+      'Missions mÃ©nage, check-lists interactives et upload photos directement depuis le terrain.',
+    gradient: 'from-emerald-400/30 to-emerald-300/10 border-emerald-400/40',
+    iconBg: 'bg-emerald-100',
     iconColor: 'text-emerald-600',
   },
 ]
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+// ââ Types ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 type Step = 'login' | 'otp' | 'totp' | 'magic-sent'
 
 interface OtpState {
@@ -77,7 +100,60 @@ interface TotpState {
   deviceId: string
 }
 
-// ── Composant principal ───────────────────────────────────────────────────────
+// ââ Fond animÃ© âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+function AnimatedBackground() {
+  return (
+    <>
+      <style>{BLOB_CSS}</style>
+      <div className="fixed inset-0 -z-10 overflow-hidden">
+        {/* Base gradient neutre */}
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-100 via-white to-blue-50/50" />
+        {/* Blob orange â haut gauche */}
+        <div
+          style={{ animation: 'sp-blob-1 14s ease-in-out infinite' }}
+          className="absolute -top-40 -left-40 w-[750px] h-[750px] rounded-full blur-[130px] opacity-55"
+          aria-hidden="true"
+        >
+          <div className="w-full h-full rounded-full bg-orange-300/70" />
+        </div>
+        {/* Blob bleu â bas droite */}
+        <div
+          style={{ animation: 'sp-blob-2 19s ease-in-out infinite' }}
+          className="absolute -bottom-40 -right-40 w-[650px] h-[650px] rounded-full blur-[120px] opacity-45"
+          aria-hidden="true"
+        >
+          <div className="w-full h-full rounded-full bg-blue-300/70" />
+        </div>
+        {/* Blob Ã©meraude â centre */}
+        <div
+          style={{ animation: 'sp-blob-3 11s ease-in-out infinite' }}
+          className="absolute top-[45%] left-[35%] w-[420px] h-[420px] rounded-full blur-[110px] opacity-35"
+          aria-hidden="true"
+        >
+          <div className="w-full h-full rounded-full bg-emerald-300/60" />
+        </div>
+        {/* Blob violet â haut droite */}
+        <div
+          style={{ animation: 'sp-blob-4 16s ease-in-out infinite' }}
+          className="absolute -top-20 right-[20%] w-[380px] h-[380px] rounded-full blur-[100px] opacity-30"
+          aria-hidden="true"
+        >
+          <div className="w-full h-full rounded-full bg-violet-300/60" />
+        </div>
+      </div>
+    </>
+  )
+}
+
+// ââ Classes verre rÃ©utilisables ââââââââââââââââââââââââââââââââââââââââââââââââ
+const glassPanel =
+  'bg-white/55 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/70'
+const glassInput =
+  'w-full px-3 py-3 text-sm border border-white/50 rounded-xl focus:outline-none focus:border-primary/50 bg-white/40 backdrop-blur-sm text-dark placeholder:text-dark/40 transition-colors shadow-inner'
+const glassBtnSecondary =
+  'w-full flex items-center justify-between px-4 py-3 rounded-xl border border-white/60 bg-white/30 backdrop-blur-sm text-dark text-sm hover:bg-white/50 transition-colors'
+
+// ââ Composant principal ââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -105,7 +181,7 @@ export default function Login() {
   const displayTab = hoveredTab ?? activeTab
   const isConnected = !!user
 
-  // ── Device check (commun login + TOTP) ────────────────────────────────────
+  // ââ Device check âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
   const doDeviceCheck = async (userId: string, deviceId: string, userEmail: string) => {
     try {
       const checkRes = await api.post('/api/auth/check-device', { userId, deviceId })
@@ -126,7 +202,7 @@ export default function Login() {
     }
   }
 
-  // ── Login classique ───────────────────────────────────────────────────────
+  // ââ Login classique âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError(null)
@@ -139,7 +215,7 @@ export default function Login() {
       if (msg.includes('invalid') || msg.includes('credentials')) {
         setError('Email ou mot de passe incorrect.')
       } else if (msg.includes('not confirmed')) {
-        setError("Votre email n'est pas confirmé. Vérifiez votre boîte mail.")
+        setError("Votre email n'est pas confirmÃ©. VÃ©rifiez votre boÃ®te mail.")
       } else {
         setError(err ?? 'Erreur de connexion.')
       }
@@ -148,7 +224,6 @@ export default function Login() {
 
     const deviceId = getOrCreateDeviceId()
 
-    // Vérifier si TOTP est activé
     try {
       const { data: factors } = await supabase.auth.mfa.listFactors()
       const totp = factors?.totp?.find((f) => f.status === 'verified')
@@ -163,14 +238,14 @@ export default function Login() {
         return
       }
     } catch {
-      // Pas de TOTP → continuer vers device check
+      // Pas de TOTP â device check
     }
 
     setLoading(false)
     await doDeviceCheck(u.id, deviceId, u.email ?? email)
   }
 
-  // ── TOTP vérification ─────────────────────────────────────────────────────
+  // ââ TOTP vÃ©rification âââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
   const handleTotpVerify = async (e: FormEvent) => {
     e.preventDefault()
     if (!totpState) return
@@ -183,7 +258,7 @@ export default function Login() {
         code: totpCode,
       })
       if (error) {
-        setTotpError("Code invalide. Vérifiez votre application d'authentification.")
+        setTotpError("Code invalide. VÃ©rifiez votre application d'authentification.")
         setTotpLoading(false)
         return
       }
@@ -191,12 +266,12 @@ export default function Login() {
       const userEmail = sessionData?.session?.user?.email ?? ''
       await doDeviceCheck(totpState.userId, totpState.deviceId, userEmail)
     } catch {
-      setTotpError('Erreur de vérification.')
+      setTotpError('Erreur de vÃ©rification.')
       setTotpLoading(false)
     }
   }
 
-  // ── Magic link ────────────────────────────────────────────────────────────
+  // ââ Magic link ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
   const handleMagicLink = async (e: FormEvent) => {
     e.preventDefault()
     setError(null)
@@ -222,7 +297,7 @@ export default function Login() {
     await logout()
   }
 
-  // ── OTP screen ────────────────────────────────────────────────────────────
+  // ââ OTP screen ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
   if (step === 'otp' && otpState) {
     return (
       <OtpVerify
@@ -235,26 +310,27 @@ export default function Login() {
     )
   }
 
-  // ── TOTP screen ───────────────────────────────────────────────────────────
+  // ââ TOTP screen âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
   if (step === 'totp') {
     return (
-      <div className="min-h-screen bg-bg flex items-center justify-center px-4">
-        <div className="w-full max-w-sm">
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <AnimatedBackground />
+        <div className="w-full max-w-sm relative z-10">
           <div className="flex flex-col items-center mb-6">
             <img src="/logo.png" alt="StayPilot" className="h-10 w-auto mb-3" />
             <div className="flex items-center gap-2 text-primary">
               <Shield size={18} />
-              <span className="font-semibold text-sm">Authentification à deux facteurs</span>
+              <span className="font-semibold text-sm">Authentification Ã  deux facteurs</span>
             </div>
           </div>
-          <div className="bg-surface rounded-2xl shadow-sm border border-border p-6">
+          <div className={`${glassPanel} p-6`}>
             <p className="text-sm text-muted mb-5 text-center leading-relaxed">
-              Entrez le code à 6 chiffres généré par votre application d'authentification
-              (Google Authenticator, Authy…)
+              Entrez le code Ã  6 chiffres gÃ©nÃ©rÃ© par votre application d'authentification
+              (Google Authenticator, Authyâ¦)
             </p>
             <form onSubmit={handleTotpVerify} className="space-y-4">
               {totpError && (
-                <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-3">
+                <div className="flex items-start gap-2 bg-red-50/70 border border-red-200/60 rounded-xl px-3 py-3">
                   <AlertCircle size={15} className="text-red-500 mt-0.5 flex-shrink-0" />
                   <p className="text-sm text-red-600">{totpError}</p>
                 </div>
@@ -267,26 +343,26 @@ export default function Login() {
                 onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ''))}
                 placeholder="000 000"
                 autoFocus
-                className="w-full px-4 py-4 text-center text-2xl font-mono tracking-[0.4em] border border-border rounded-xl focus:outline-none focus:border-primary bg-bg text-dark placeholder:text-muted/40 transition-colors"
+                className="w-full px-4 py-4 text-center text-2xl font-mono tracking-[0.4em] border border-white/50 rounded-2xl focus:outline-none focus:border-primary/50 bg-white/40 backdrop-blur-sm text-dark placeholder:text-dark/30 transition-colors shadow-inner"
               />
               <button
                 type="submit"
                 disabled={totpLoading || totpCode.length !== 6}
-                className="w-full py-3 rounded-xl text-white text-sm font-semibold bg-primary hover:bg-primary-dark transition-colors disabled:opacity-60"
+                className="w-full py-3 rounded-xl text-white text-sm font-semibold bg-primary hover:bg-primary-dark transition-colors disabled:opacity-60 shadow-md"
               >
                 {totpLoading ? (
                   <span className="flex items-center justify-center gap-2">
                     <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Vérification…
+                    VÃ©rificationâ¦
                   </span>
                 ) : (
-                  'Vérifier le code'
+                  'VÃ©rifier le code'
                 )}
               </button>
             </form>
           </div>
           <p className="text-center text-xs text-muted mt-4">
-            Problème d'accès ?{' '}
+            ProblÃ¨me d'accÃ¨s ?{' '}
             <button onClick={() => setStep('login')} className="text-primary hover:underline">
               Retour
             </button>
@@ -296,24 +372,25 @@ export default function Login() {
     )
   }
 
-  // ── Magic link sent ───────────────────────────────────────────────────────
+  // ââ Magic link sent ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
   if (step === 'magic-sent') {
     return (
-      <div className="min-h-screen bg-bg flex items-center justify-center px-4">
-        <div className="w-full max-w-sm text-center">
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <AnimatedBackground />
+        <div className="w-full max-w-sm text-center relative z-10">
           <div className="flex flex-col items-center mb-6">
             <img src="/logo.png" alt="StayPilot" className="h-10 w-auto mb-3" />
           </div>
-          <div className="bg-surface rounded-2xl shadow-sm border border-border p-8">
+          <div className={`${glassPanel} p-8`}>
             <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
               <Mail size={24} className="text-primary" />
             </div>
-            <h2 className="text-lg font-semibold text-dark mb-2">Vérifiez votre email</h2>
+            <h2 className="text-lg font-semibold text-dark mb-2">VÃ©rifiez votre email</h2>
             <p className="text-sm text-muted leading-relaxed">
-              Un lien de connexion a été envoyé à{' '}
+              Un lien de connexion a Ã©tÃ© envoyÃ© Ã {' '}
               <strong className="text-dark">{magicEmail}</strong>.
               <br />
-              Cliquez dessus pour vous connecter automatiquement — sans mot de passe.
+              Cliquez dessus pour vous connecter automatiquement â sans mot de passe.
             </p>
             <button
               onClick={() => {
@@ -322,7 +399,7 @@ export default function Login() {
               }}
               className="mt-6 text-sm text-primary hover:underline"
             >
-              ← Retour à la connexion
+              â Retour Ã  la connexion
             </button>
           </div>
         </div>
@@ -330,16 +407,18 @@ export default function Login() {
     )
   }
 
-  // ── Main: Login / Connected ───────────────────────────────────────────────
+  // ââ Main : Login / ConnectÃ© ââââââââââââââââââââââââââââââââââââââââââââââââââââ
   return (
-    <div className="min-h-screen bg-bg flex items-center justify-center px-4 py-10 transition-colors">
-      <div className="w-full max-w-5xl flex flex-col lg:flex-row gap-5 items-stretch">
+    <div className="min-h-screen flex items-center justify-center px-4 py-10">
+      <AnimatedBackground />
+      <div className="w-full max-w-5xl flex flex-col lg:flex-row gap-6 items-stretch relative z-10">
 
-        {/* ── LEFT : 3 espaces ── */}
-        <div className="flex flex-col gap-3 lg:w-72 shrink-0">
-          <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-1 px-1 hidden lg:block">
+        {/* ââ GAUCHE : 3 espaces ââ */}
+        <div className="flex flex-col gap-4 lg:w-[22rem] shrink-0">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 px-1 hidden lg:block">
             Votre espace
           </p>
+
           {SPACES.map((space, i) => {
             const isActive = displayTab === i
             const { Icon } = space
@@ -350,33 +429,43 @@ export default function Login() {
                 onMouseLeave={() => setHoveredTab(null)}
                 onClick={() => setActiveTab(i)}
                 className={`
-                  relative text-left rounded-2xl border bg-gradient-to-br px-4 py-3.5
+                  relative text-left rounded-2xl border bg-gradient-to-br px-5 py-5
                   transition-all duration-300 ease-in-out cursor-pointer
+                  backdrop-blur-md
                   ${space.gradient}
                   ${isActive
-                    ? 'opacity-100 shadow-md scale-[1.02]'
-                    : 'opacity-45 hover:opacity-65'
+                    ? 'opacity-100 shadow-xl scale-[1.02] bg-white/50'
+                    : 'opacity-50 hover:opacity-75 bg-white/20'
                   }
                 `}
               >
-                <div className="flex items-start gap-3">
-                  <div className={`p-2 rounded-xl ${space.iconBg} shrink-0 mt-0.5`}>
-                    <Icon size={18} className={space.iconColor} />
+                <div className="flex items-start gap-4">
+                  {/* IcÃ´ne */}
+                  <div className={`p-3 rounded-xl ${space.iconBg} shrink-0 mt-0.5`}>
+                    <Icon size={22} className={space.iconColor} />
                   </div>
+
                   <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-dark text-sm leading-tight">{space.title}</p>
-                    <p className="text-xs text-muted mt-0.5">{space.subtitle}</p>
+                    <p className="font-semibold text-dark text-[15px] leading-tight">
+                      {space.title}
+                    </p>
+                    <p className="text-xs text-muted mt-1">{space.subtitle}</p>
+
+                    {/* Description dÃ©pliable au hover/active */}
                     <div
                       className={`overflow-hidden transition-all duration-300 ${
-                        isActive ? 'max-h-20 opacity-100 mt-2' : 'max-h-0 opacity-0'
+                        isActive ? 'max-h-28 opacity-100 mt-2.5' : 'max-h-0 opacity-0'
                       }`}
                     >
-                      <p className="text-xs text-muted leading-relaxed">{space.description}</p>
+                      <p className="text-sm text-muted/90 leading-relaxed">
+                        {space.description}
+                      </p>
                     </div>
                   </div>
+
                   <ChevronRight
-                    size={15}
-                    className={`shrink-0 text-muted/60 transition-transform duration-200 mt-0.5 ${
+                    size={16}
+                    className={`shrink-0 text-muted/60 transition-transform duration-200 mt-1 ${
                       isActive ? 'rotate-90' : ''
                     }`}
                   />
@@ -384,14 +473,15 @@ export default function Login() {
               </button>
             )
           })}
-          <p className="text-xs text-muted text-center mt-3 hidden lg:block">
-            StayPilot · Votre copilote conciergerie
+
+          <p className="text-xs text-slate-400 text-center mt-2 hidden lg:block">
+            StayPilot Â· Votre copilote conciergerie
           </p>
         </div>
 
-        {/* ── RIGHT : formulaire / compte ── */}
+        {/* ââ DROITE : formulaire / compte ââ */}
         <div className="flex-1 flex flex-col justify-center">
-          <div className="bg-surface rounded-2xl shadow-sm border border-border p-6 sm:p-8 transition-colors">
+          <div className={`${glassPanel} p-6 sm:p-8`}>
 
             {/* Logo + titre */}
             <div className="flex flex-col items-center mb-6">
@@ -401,15 +491,16 @@ export default function Login() {
               </h1>
               <p className="text-sm text-muted mt-1 text-center">
                 {isConnected
-                  ? 'Vous êtes connecté à StayPilot'
-                  : 'Connectez-vous à votre espace de gestion'}
+                  ? 'Vous Ãªtes connectÃ© Ã  StayPilot'
+                  : 'Connectez-vous Ã  votre espace de gestion'}
               </p>
             </div>
 
-            {/* ── Déjà connecté ── */}
+            {/* ââ DÃ©jÃ  connectÃ© ââ */}
             {isConnected ? (
               <div className="space-y-2.5">
-                <div className="flex items-center gap-3 bg-bg rounded-xl border border-border px-4 py-3">
+                {/* Carte utilisateur */}
+                <div className="flex items-center gap-3 bg-white/40 backdrop-blur-sm rounded-2xl border border-white/60 px-4 py-3">
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                     <span className="text-sm font-bold text-primary">
                       {(user.email?.[0] ?? '?').toUpperCase()}
@@ -421,12 +512,12 @@ export default function Login() {
                       {user.email_confirmed_at ? (
                         <>
                           <Check size={11} className="text-emerald-500" />
-                          <span className="text-xs text-emerald-600">Email vérifié</span>
+                          <span className="text-xs text-emerald-600">Email vÃ©rifiÃ©</span>
                         </>
                       ) : (
                         <>
                           <AlertCircle size={11} className="text-amber-500" />
-                          <span className="text-xs text-amber-600">Email non vérifié</span>
+                          <span className="text-xs text-amber-600">Email non vÃ©rifiÃ©</span>
                         </>
                       )}
                     </div>
@@ -435,15 +526,15 @@ export default function Login() {
 
                 <button
                   onClick={() => navigate('/portal')}
-                  className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary-dark transition-colors"
+                  className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary-dark transition-colors shadow-md"
                 >
-                  <span>Accéder au tableau de bord</span>
+                  <span>AccÃ©der au tableau de bord</span>
                   <ChevronRight size={16} />
                 </button>
 
                 <button
                   onClick={() => navigate('/settings')}
-                  className="w-full flex items-center justify-between px-4 py-3 rounded-xl border border-border bg-bg text-dark text-sm hover:bg-surface transition-colors"
+                  className={glassBtnSecondary}
                 >
                   <div className="flex items-center gap-2.5">
                     <KeyRound size={15} className="text-muted" />
@@ -454,32 +545,33 @@ export default function Login() {
 
                 <button
                   onClick={() => navigate('/settings')}
-                  className="w-full flex items-center justify-between px-4 py-3 rounded-xl border border-border bg-bg text-dark text-sm hover:bg-surface transition-colors"
+                  className={glassBtnSecondary}
                 >
                   <div className="flex items-center gap-2.5">
                     <Shield size={15} className="text-muted" />
-                    <span>Authentification à deux facteurs</span>
+                    <span>Authentification Ã  deux facteurs</span>
                   </div>
                   <ChevronRight size={14} className="text-muted" />
                 </button>
 
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm text-red-500 hover:bg-red-50 border border-red-100 transition-colors"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm text-red-500 hover:bg-red-50/50 border border-red-100/60 backdrop-blur-sm transition-colors"
                 >
                   <LogOut size={14} />
-                  Se déconnecter
+                  Se dÃ©connecter
                 </button>
               </div>
             ) : (
               <div>
-                <div className="flex rounded-xl border border-border overflow-hidden mb-5 text-sm">
+                {/* Toggle Mot de passe / Lien email */}
+                <div className="flex rounded-xl border border-white/50 bg-white/20 backdrop-blur-sm overflow-hidden mb-5 text-sm">
                   <button
                     type="button"
                     onClick={() => setUseMagicLink(false)}
                     className={`flex-1 py-2.5 font-medium transition-colors ${
                       !useMagicLink
-                        ? 'bg-primary text-white'
+                        ? 'bg-primary text-white shadow-sm'
                         : 'text-muted hover:text-dark bg-transparent'
                     }`}
                   >
@@ -490,7 +582,7 @@ export default function Login() {
                     onClick={() => setUseMagicLink(true)}
                     className={`flex-1 py-2.5 font-medium transition-colors flex items-center justify-center gap-1.5 ${
                       useMagicLink
-                        ? 'bg-primary text-white'
+                        ? 'bg-primary text-white shadow-sm'
                         : 'text-muted hover:text-dark bg-transparent'
                     }`}
                   >
@@ -500,7 +592,7 @@ export default function Login() {
                 </div>
 
                 {error && (
-                  <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 rounded-lg px-3 py-3 mb-4">
+                  <div className="flex items-start gap-2.5 bg-red-50/60 border border-red-200/50 rounded-xl px-3 py-3 mb-4">
                     <AlertCircle size={15} className="text-red-500 mt-0.5 flex-shrink-0" />
                     <p className="text-sm text-red-600">{error}</p>
                   </div>
@@ -518,21 +610,21 @@ export default function Login() {
                         onChange={(e) => setMagicEmail(e.target.value)}
                         placeholder="admin@staypilot.fr"
                         required
-                        className="w-full px-3 py-3 text-sm border border-border rounded-lg focus:outline-none focus:border-primary bg-bg text-dark placeholder:text-muted transition-colors"
+                        className={glassInput}
                       />
                     </div>
                     <p className="text-xs text-muted -mt-1">
-                      Vous recevrez un lien de connexion sécurisé — aucun mot de passe requis.
+                      Vous recevrez un lien de connexion sÃ©curisÃ© â aucun mot de passe requis.
                     </p>
                     <button
                       type="submit"
                       disabled={magicLoading}
-                      className="w-full py-3 rounded-xl text-white text-sm font-semibold bg-primary hover:bg-primary-dark transition-colors disabled:opacity-60"
+                      className="w-full py-3 rounded-xl text-white text-sm font-semibold bg-primary hover:bg-primary-dark transition-colors disabled:opacity-60 shadow-md"
                     >
                       {magicLoading ? (
                         <span className="flex items-center justify-center gap-2">
                           <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          Envoi…
+                          Envoiâ¦
                         </span>
                       ) : (
                         'Envoyer le lien de connexion'
@@ -551,7 +643,7 @@ export default function Login() {
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="admin@staypilot.fr"
                         required
-                        className="w-full px-3 py-3 text-base sm:text-sm border border-border rounded-lg focus:outline-none focus:border-primary bg-bg text-dark placeholder:text-muted transition-colors"
+                        className={`${glassInput} text-base sm:text-sm`}
                       />
                     </div>
                     <div>
@@ -563,7 +655,7 @@ export default function Login() {
                           to="/forgot-password"
                           className="text-xs text-primary hover:underline"
                         >
-                          Mot de passe oublié ?
+                          Mot de passe oubliÃ© ?
                         </Link>
                       </div>
                       <div className="relative">
@@ -571,9 +663,9 @@ export default function Login() {
                           type={showPassword ? 'text' : 'password'}
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          placeholder="••••••••"
+                          placeholder="â¢â¢â¢â¢â¢â¢â¢â¢"
                           required
-                          className="w-full px-3 py-3 pr-10 text-base sm:text-sm border border-border rounded-lg focus:outline-none focus:border-primary bg-bg text-dark placeholder:text-muted transition-colors"
+                          className={`${glassInput} pr-10 text-base sm:text-sm`}
                         />
                         <button
                           type="button"
@@ -588,12 +680,12 @@ export default function Login() {
                     <button
                       type="submit"
                       disabled={loading}
-                      className="w-full py-3 rounded-xl text-white text-sm font-semibold bg-primary hover:bg-primary-dark transition-colors disabled:opacity-60 mt-2"
+                      className="w-full py-3 rounded-xl text-white text-sm font-semibold bg-primary hover:bg-primary-dark transition-colors disabled:opacity-60 shadow-md mt-2"
                     >
                       {loading ? (
                         <span className="flex items-center justify-center gap-2">
                           <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          Connexion…
+                          Connexionâ¦
                         </span>
                       ) : (
                         'Se connecter'
@@ -605,13 +697,14 @@ export default function Login() {
                 <p className="text-center text-sm text-muted mt-5">
                   Pas encore de compte ?{' '}
                   <Link to="/register" className="text-primary font-medium hover:underline">
-                    Créer un compte
+                    CrÃ©er un compte
                   </Link>
                 </p>
               </div>
             )}
           </div>
         </div>
+
       </div>
     </div>
   )
