@@ -12,23 +12,33 @@ import { supabase } from '../lib/supabase'
 // ── Styles animations fond ─────────────────────────────────────────────────────
 const BLOB_CSS = `
   @keyframes sp-blob-1 {
-    0%,100% { transform: translate(0,0) scale(1); }
-    33%      { transform: translate(45px,-65px) scale(1.08); }
-    66%      { transform: translate(-28px,28px) scale(0.93); }
+    0%   { transform: translate(0px,0px) scale(1); }
+    20%  { transform: translate(25px,-38px) scale(1.03); }
+    40%  { transform: translate(50px,-68px) scale(1.08); }
+    60%  { transform: translate(32px,-32px) scale(1.05); }
+    80%  { transform: translate(-26px,22px) scale(0.95); }
+    100% { transform: translate(0px,0px) scale(1); }
   }
   @keyframes sp-blob-2 {
-    0%,100% { transform: translate(0,0) scale(1); }
-    33%      { transform: translate(-55px,40px) scale(1.06); }
-    66%      { transform: translate(32px,-50px) scale(0.95); }
+    0%   { transform: translate(0px,0px) scale(1); }
+    25%  { transform: translate(-38px,24px) scale(1.03); }
+    50%  { transform: translate(-60px,44px) scale(1.07); }
+    75%  { transform: translate(18px,-30px) scale(0.97); }
+    100% { transform: translate(0px,0px) scale(1); }
   }
   @keyframes sp-blob-3 {
-    0%,100% { transform: translate(0,0) scale(1); }
-    50%      { transform: translate(25px,35px) scale(1.12); }
+    0%   { transform: translate(0px,0px) scale(1); }
+    30%  { transform: translate(14px,20px) scale(1.06); }
+    55%  { transform: translate(26px,38px) scale(1.12); }
+    80%  { transform: translate(-10px,16px) scale(1.04); }
+    100% { transform: translate(0px,0px) scale(1); }
   }
   @keyframes sp-blob-4 {
-    0%,100% { transform: translate(0,0) scale(1); }
-    40%      { transform: translate(-35px,-22px) scale(0.91); }
-    80%      { transform: translate(22px,18px) scale(1.06); }
+    0%   { transform: translate(0px,0px) scale(1); }
+    25%  { transform: translate(-20px,-16px) scale(0.95); }
+    55%  { transform: translate(-38px,-24px) scale(0.90); }
+    80%  { transform: translate(18px,15px) scale(1.06); }
+    100% { transform: translate(0px,0px) scale(1); }
   }
 `
 
@@ -110,7 +120,7 @@ function AnimatedBackground() {
         <div className="absolute inset-0 bg-gradient-to-br from-slate-100 via-white to-blue-50/50" />
         {/* Blob orange – haut gauche */}
         <div
-          style={{ animation: 'sp-blob-1 14s ease-in-out infinite', opacity: 0.65 }}
+          style={{ animation: 'sp-blob-1 22s ease-in-out infinite', opacity: 0.65 }}
           className="absolute -top-40 -left-40 w-[750px] h-[750px] rounded-full blur-[120px]"
           aria-hidden="true"
         >
@@ -118,7 +128,7 @@ function AnimatedBackground() {
         </div>
         {/* Blob bleu – bas droite */}
         <div
-          style={{ animation: 'sp-blob-2 19s ease-in-out infinite', opacity: 0.55 }}
+          style={{ animation: 'sp-blob-2 28s ease-in-out -9s infinite', opacity: 0.55 }}
           className="absolute -bottom-40 -right-40 w-[650px] h-[650px] rounded-full blur-[110px]"
           aria-hidden="true"
         >
@@ -126,7 +136,7 @@ function AnimatedBackground() {
         </div>
         {/* Blob émeraude – centre */}
         <div
-          style={{ animation: 'sp-blob-3 11s ease-in-out infinite', opacity: 0.40 }}
+          style={{ animation: 'sp-blob-3 17s ease-in-out -4s infinite', opacity: 0.40 }}
           className="absolute top-[45%] left-[35%] w-[420px] h-[420px] rounded-full blur-[100px]"
           aria-hidden="true"
         >
@@ -134,7 +144,7 @@ function AnimatedBackground() {
         </div>
         {/* Blob violet – haut droite */}
         <div
-          style={{ animation: 'sp-blob-4 16s ease-in-out infinite', opacity: 0.40 }}
+          style={{ animation: 'sp-blob-4 24s ease-in-out -14s infinite', opacity: 0.40 }}
           className="absolute -top-20 right-[20%] w-[380px] h-[380px] rounded-full blur-[90px]"
           aria-hidden="true"
         >
