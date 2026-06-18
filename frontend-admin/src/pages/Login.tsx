@@ -9,7 +9,7 @@ import OtpVerify from './OtpVerify'
 import api from '../lib/api'
 import { supabase } from '../lib/supabase'
 
-// ââ Styles animations fond âââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Styles animations fond ─────────────────────────────────────────────────────
 const BLOB_CSS = `
   @keyframes sp-blob-1 {
     0%,100% { transform: translate(0,0) scale(1); }
@@ -32,7 +32,7 @@ const BLOB_CSS = `
   }
 `
 
-// ââ Device ID ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Device ID ──────────────────────────────────────────────────────────────────
 const DEVICE_KEY = 'sp_device_id'
 function getOrCreateDeviceId(): string {
   let id = localStorage.getItem(DEVICE_KEY)
@@ -46,7 +46,7 @@ function getOrCreateDeviceId(): string {
   return id
 }
 
-// ââ Espaces ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Espaces ────────────────────────────────────────────────────────────────────
 const SPACES = [
   {
     id: 'concierge',
@@ -54,7 +54,7 @@ const SPACES = [
     title: 'Espace Conciergerie',
     subtitle: 'Pilotez vos logements',
     description:
-      'Synchronisation multi-plateformes, messagerie automatique, facturation propriÃ©taires et planning centralisÃ©.',
+      'Synchronisation multi-plateformes, messagerie automatique, facturation propriétaires et planning centralisé.',
     gradient: 'from-orange-400/30 to-orange-300/10 border-orange-400/40',
     iconBg: 'bg-orange-100',
     iconColor: 'text-primary',
@@ -62,10 +62,10 @@ const SPACES = [
   {
     id: 'owner',
     Icon: Users,
-    title: 'Portail PropriÃ©taire',
+    title: 'Portail Propriétaire',
     subtitle: 'Suivez vos revenus',
     description:
-      'Revenus en temps rÃ©el, calendrier de rÃ©servations, documents et rapports â accessible 24h/24.',
+      'Revenus en temps réel, calendrier de réservations, documents et rapports — accessible 24h/24.',
     gradient: 'from-blue-400/30 to-blue-300/10 border-blue-400/40',
     iconBg: 'bg-blue-100',
     iconColor: 'text-blue-500',
@@ -74,16 +74,16 @@ const SPACES = [
     id: 'agent',
     Icon: Wrench,
     title: 'Espace Agents',
-    subtitle: 'GÃ©rez vos missions',
+    subtitle: 'Gérez vos missions',
     description:
-      'Missions mÃ©nage, check-lists interactives et upload photos directement depuis le terrain.',
+      'Missions ménage, check-lists interactives et upload photos directement depuis le terrain.',
     gradient: 'from-emerald-400/30 to-emerald-300/10 border-emerald-400/40',
     iconBg: 'bg-emerald-100',
     iconColor: 'text-emerald-600',
   },
 ]
 
-// ââ Types ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Types ──────────────────────────────────────────────────────────────────────
 type Step = 'login' | 'otp' | 'totp' | 'magic-sent'
 
 interface OtpState {
@@ -100,7 +100,7 @@ interface TotpState {
   deviceId: string
 }
 
-// ââ Fond animÃ© âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Fond animé ─────────────────────────────────────────────────────────────────
 function AnimatedBackground() {
   return (
     <>
@@ -108,44 +108,44 @@ function AnimatedBackground() {
       <div className="fixed inset-0 -z-10 overflow-hidden">
         {/* Base gradient neutre */}
         <div className="absolute inset-0 bg-gradient-to-br from-slate-100 via-white to-blue-50/50" />
-        {/* Blob orange â haut gauche */}
+        {/* Blob orange – haut gauche */}
         <div
-          style={{ animation: 'sp-blob-1 14s ease-in-out infinite' }}
-          className="absolute -top-40 -left-40 w-[750px] h-[750px] rounded-full blur-[130px] opacity-55"
+          style={{ animation: 'sp-blob-1 14s ease-in-out infinite', opacity: 0.65 }}
+          className="absolute -top-40 -left-40 w-[750px] h-[750px] rounded-full blur-[120px]"
           aria-hidden="true"
         >
-          <div className="w-full h-full rounded-full bg-orange-300/70" />
+          <div className="w-full h-full rounded-full bg-orange-300" />
         </div>
-        {/* Blob bleu â bas droite */}
+        {/* Blob bleu – bas droite */}
         <div
-          style={{ animation: 'sp-blob-2 19s ease-in-out infinite' }}
-          className="absolute -bottom-40 -right-40 w-[650px] h-[650px] rounded-full blur-[120px] opacity-45"
+          style={{ animation: 'sp-blob-2 19s ease-in-out infinite', opacity: 0.55 }}
+          className="absolute -bottom-40 -right-40 w-[650px] h-[650px] rounded-full blur-[110px]"
           aria-hidden="true"
         >
-          <div className="w-full h-full rounded-full bg-blue-300/70" />
+          <div className="w-full h-full rounded-full bg-blue-300" />
         </div>
-        {/* Blob Ã©meraude â centre */}
+        {/* Blob émeraude – centre */}
         <div
-          style={{ animation: 'sp-blob-3 11s ease-in-out infinite' }}
-          className="absolute top-[45%] left-[35%] w-[420px] h-[420px] rounded-full blur-[110px] opacity-35"
+          style={{ animation: 'sp-blob-3 11s ease-in-out infinite', opacity: 0.40 }}
+          className="absolute top-[45%] left-[35%] w-[420px] h-[420px] rounded-full blur-[100px]"
           aria-hidden="true"
         >
-          <div className="w-full h-full rounded-full bg-emerald-300/60" />
+          <div className="w-full h-full rounded-full bg-emerald-300" />
         </div>
-        {/* Blob violet â haut droite */}
+        {/* Blob violet – haut droite */}
         <div
-          style={{ animation: 'sp-blob-4 16s ease-in-out infinite' }}
-          className="absolute -top-20 right-[20%] w-[380px] h-[380px] rounded-full blur-[100px] opacity-30"
+          style={{ animation: 'sp-blob-4 16s ease-in-out infinite', opacity: 0.40 }}
+          className="absolute -top-20 right-[20%] w-[380px] h-[380px] rounded-full blur-[90px]"
           aria-hidden="true"
         >
-          <div className="w-full h-full rounded-full bg-violet-300/60" />
+          <div className="w-full h-full rounded-full bg-violet-300" />
         </div>
       </div>
     </>
   )
 }
 
-// ââ Classes verre rÃ©utilisables ââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Classes verre réutilisables ────────────────────────────────────────────────
 const glassPanel =
   'bg-white/55 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/70'
 const glassInput =
@@ -153,7 +153,7 @@ const glassInput =
 const glassBtnSecondary =
   'w-full flex items-center justify-between px-4 py-3 rounded-xl border border-white/60 bg-white/30 backdrop-blur-sm text-dark text-sm hover:bg-white/50 transition-colors'
 
-// ââ Composant principal ââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Composant principal ────────────────────────────────────────────────────────
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -181,7 +181,7 @@ export default function Login() {
   const displayTab = hoveredTab ?? activeTab
   const isConnected = !!user
 
-  // ââ Device check âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+  // ── Device check ─────────────────────────────────────────────────────────────
   const doDeviceCheck = async (userId: string, deviceId: string, userEmail: string) => {
     try {
       const checkRes = await api.post('/api/auth/check-device', { userId, deviceId })
@@ -202,7 +202,7 @@ export default function Login() {
     }
   }
 
-  // ââ Login classique âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+  // ── Login classique ───────────────────────────────────────────────────────────
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError(null)
@@ -215,7 +215,7 @@ export default function Login() {
       if (msg.includes('invalid') || msg.includes('credentials')) {
         setError('Email ou mot de passe incorrect.')
       } else if (msg.includes('not confirmed')) {
-        setError("Votre email n'est pas confirmÃ©. VÃ©rifiez votre boÃ®te mail.")
+        setError("Votre email n'est pas confirmé. Vérifiez votre boîte mail.")
       } else {
         setError(err ?? 'Erreur de connexion.')
       }
@@ -238,14 +238,14 @@ export default function Login() {
         return
       }
     } catch {
-      // Pas de TOTP â device check
+      // Pas de TOTP → device check
     }
 
     setLoading(false)
     await doDeviceCheck(u.id, deviceId, u.email ?? email)
   }
 
-  // ââ TOTP vÃ©rification âââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+  // ── TOTP vérification ─────────────────────────────────────────────────────────
   const handleTotpVerify = async (e: FormEvent) => {
     e.preventDefault()
     if (!totpState) return
@@ -258,7 +258,7 @@ export default function Login() {
         code: totpCode,
       })
       if (error) {
-        setTotpError("Code invalide. VÃ©rifiez votre application d'authentification.")
+        setTotpError("Code invalide. Vérifiez votre application d'authentification.")
         setTotpLoading(false)
         return
       }
@@ -266,12 +266,12 @@ export default function Login() {
       const userEmail = sessionData?.session?.user?.email ?? ''
       await doDeviceCheck(totpState.userId, totpState.deviceId, userEmail)
     } catch {
-      setTotpError('Erreur de vÃ©rification.')
+      setTotpError('Erreur de vérification.')
       setTotpLoading(false)
     }
   }
 
-  // ââ Magic link ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+  // ── Magic link ────────────────────────────────────────────────────────────────
   const handleMagicLink = async (e: FormEvent) => {
     e.preventDefault()
     setError(null)
@@ -297,7 +297,7 @@ export default function Login() {
     await logout()
   }
 
-  // ââ OTP screen ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+  // ── OTP screen ────────────────────────────────────────────────────────────────
   if (step === 'otp' && otpState) {
     return (
       <OtpVerify
@@ -310,7 +310,7 @@ export default function Login() {
     )
   }
 
-  // ââ TOTP screen âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+  // ── TOTP screen ───────────────────────────────────────────────────────────────
   if (step === 'totp') {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
@@ -320,13 +320,13 @@ export default function Login() {
             <img src="/logo.png" alt="StayPilot" className="h-10 w-auto mb-3" />
             <div className="flex items-center gap-2 text-primary">
               <Shield size={18} />
-              <span className="font-semibold text-sm">Authentification Ã  deux facteurs</span>
+              <span className="font-semibold text-sm">Authentification à deux facteurs</span>
             </div>
           </div>
           <div className={`${glassPanel} p-6`}>
             <p className="text-sm text-muted mb-5 text-center leading-relaxed">
-              Entrez le code Ã  6 chiffres gÃ©nÃ©rÃ© par votre application d'authentification
-              (Google Authenticator, Authyâ¦)
+              Entrez le code à 6 chiffres généré par votre application d'authentification
+              (Google Authenticator, Authy…)
             </p>
             <form onSubmit={handleTotpVerify} className="space-y-4">
               {totpError && (
@@ -353,16 +353,16 @@ export default function Login() {
                 {totpLoading ? (
                   <span className="flex items-center justify-center gap-2">
                     <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    VÃ©rificationâ¦
+                    Vérification…
                   </span>
                 ) : (
-                  'VÃ©rifier le code'
+                  'Vérifier le code'
                 )}
               </button>
             </form>
           </div>
           <p className="text-center text-xs text-muted mt-4">
-            ProblÃ¨me d'accÃ¨s ?{' '}
+            Problème d'accès ?{' '}
             <button onClick={() => setStep('login')} className="text-primary hover:underline">
               Retour
             </button>
@@ -372,7 +372,7 @@ export default function Login() {
     )
   }
 
-  // ââ Magic link sent ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+  // ── Magic link sent ────────────────────────────────────────────────────────────
   if (step === 'magic-sent') {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
@@ -385,12 +385,12 @@ export default function Login() {
             <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
               <Mail size={24} className="text-primary" />
             </div>
-            <h2 className="text-lg font-semibold text-dark mb-2">VÃ©rifiez votre email</h2>
+            <h2 className="text-lg font-semibold text-dark mb-2">Vérifiez votre email</h2>
             <p className="text-sm text-muted leading-relaxed">
-              Un lien de connexion a Ã©tÃ© envoyÃ© Ã {' '}
+              Un lien de connexion a été envoyé à{' '}
               <strong className="text-dark">{magicEmail}</strong>.
               <br />
-              Cliquez dessus pour vous connecter automatiquement â sans mot de passe.
+              Cliquez dessus pour vous connecter automatiquement — sans mot de passe.
             </p>
             <button
               onClick={() => {
@@ -399,7 +399,7 @@ export default function Login() {
               }}
               className="mt-6 text-sm text-primary hover:underline"
             >
-              â Retour Ã  la connexion
+              ← Retour à la connexion
             </button>
           </div>
         </div>
@@ -407,13 +407,13 @@ export default function Login() {
     )
   }
 
-  // ââ Main : Login / ConnectÃ© ââââââââââââââââââââââââââââââââââââââââââââââââââââ
+  // ── Main : Login / Connecté ────────────────────────────────────────────────────
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-10">
       <AnimatedBackground />
       <div className="w-full max-w-5xl flex flex-col lg:flex-row gap-6 items-stretch relative z-10">
 
-        {/* ââ GAUCHE : 3 espaces ââ */}
+        {/* ── GAUCHE : 3 espaces ── */}
         <div className="flex flex-col gap-4 lg:w-[22rem] shrink-0">
           <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 px-1 hidden lg:block">
             Votre espace
@@ -440,7 +440,7 @@ export default function Login() {
                 `}
               >
                 <div className="flex items-start gap-4">
-                  {/* IcÃ´ne */}
+                  {/* Icône */}
                   <div className={`p-3 rounded-xl ${space.iconBg} shrink-0 mt-0.5`}>
                     <Icon size={22} className={space.iconColor} />
                   </div>
@@ -451,7 +451,7 @@ export default function Login() {
                     </p>
                     <p className="text-xs text-muted mt-1">{space.subtitle}</p>
 
-                    {/* Description dÃ©pliable au hover/active */}
+                    {/* Description dépliable au hover/active */}
                     <div
                       className={`overflow-hidden transition-all duration-300 ${
                         isActive ? 'max-h-28 opacity-100 mt-2.5' : 'max-h-0 opacity-0'
@@ -475,11 +475,11 @@ export default function Login() {
           })}
 
           <p className="text-xs text-slate-400 text-center mt-2 hidden lg:block">
-            StayPilot Â· Votre copilote conciergerie
+            StayPilot · Votre copilote conciergerie
           </p>
         </div>
 
-        {/* ââ DROITE : formulaire / compte ââ */}
+        {/* ── DROITE : formulaire / compte ── */}
         <div className="flex-1 flex flex-col justify-center">
           <div className={`${glassPanel} p-6 sm:p-8`}>
 
@@ -491,12 +491,12 @@ export default function Login() {
               </h1>
               <p className="text-sm text-muted mt-1 text-center">
                 {isConnected
-                  ? 'Vous Ãªtes connectÃ© Ã  StayPilot'
-                  : 'Connectez-vous Ã  votre espace de gestion'}
+                  ? 'Vous êtes connecté à StayPilot'
+                  : 'Connectez-vous à votre espace de gestion'}
               </p>
             </div>
 
-            {/* ââ DÃ©jÃ  connectÃ© ââ */}
+            {/* ── Déjà connecté ── */}
             {isConnected ? (
               <div className="space-y-2.5">
                 {/* Carte utilisateur */}
@@ -512,12 +512,12 @@ export default function Login() {
                       {user.email_confirmed_at ? (
                         <>
                           <Check size={11} className="text-emerald-500" />
-                          <span className="text-xs text-emerald-600">Email vÃ©rifiÃ©</span>
+                          <span className="text-xs text-emerald-600">Email vérifié</span>
                         </>
                       ) : (
                         <>
                           <AlertCircle size={11} className="text-amber-500" />
-                          <span className="text-xs text-amber-600">Email non vÃ©rifiÃ©</span>
+                          <span className="text-xs text-amber-600">Email non vérifié</span>
                         </>
                       )}
                     </div>
@@ -528,7 +528,7 @@ export default function Login() {
                   onClick={() => navigate('/portal')}
                   className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary-dark transition-colors shadow-md"
                 >
-                  <span>AccÃ©der au tableau de bord</span>
+                  <span>Accéder au tableau de bord</span>
                   <ChevronRight size={16} />
                 </button>
 
@@ -549,7 +549,7 @@ export default function Login() {
                 >
                   <div className="flex items-center gap-2.5">
                     <Shield size={15} className="text-muted" />
-                    <span>Authentification Ã  deux facteurs</span>
+                    <span>Authentification à deux facteurs</span>
                   </div>
                   <ChevronRight size={14} className="text-muted" />
                 </button>
@@ -559,7 +559,7 @@ export default function Login() {
                   className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm text-red-500 hover:bg-red-50/50 border border-red-100/60 backdrop-blur-sm transition-colors"
                 >
                   <LogOut size={14} />
-                  Se dÃ©connecter
+                  Se déconnecter
                 </button>
               </div>
             ) : (
@@ -614,7 +614,7 @@ export default function Login() {
                       />
                     </div>
                     <p className="text-xs text-muted -mt-1">
-                      Vous recevrez un lien de connexion sÃ©curisÃ© â aucun mot de passe requis.
+                      Vous recevrez un lien de connexion sécurisé — aucun mot de passe requis.
                     </p>
                     <button
                       type="submit"
@@ -624,7 +624,7 @@ export default function Login() {
                       {magicLoading ? (
                         <span className="flex items-center justify-center gap-2">
                           <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          Envoiâ¦
+                          Envoi…
                         </span>
                       ) : (
                         'Envoyer le lien de connexion'
@@ -655,7 +655,7 @@ export default function Login() {
                           to="/forgot-password"
                           className="text-xs text-primary hover:underline"
                         >
-                          Mot de passe oubliÃ© ?
+                          Mot de passe oublié ?
                         </Link>
                       </div>
                       <div className="relative">
@@ -663,7 +663,7 @@ export default function Login() {
                           type={showPassword ? 'text' : 'password'}
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          placeholder="â¢â¢â¢â¢â¢â¢â¢â¢"
+                          placeholder="••••••••"
                           required
                           className={`${glassInput} pr-10 text-base sm:text-sm`}
                         />
@@ -685,7 +685,7 @@ export default function Login() {
                       {loading ? (
                         <span className="flex items-center justify-center gap-2">
                           <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          Connexionâ¦
+                          Connexion…
                         </span>
                       ) : (
                         'Se connecter'
@@ -697,7 +697,7 @@ export default function Login() {
                 <p className="text-center text-sm text-muted mt-5">
                   Pas encore de compte ?{' '}
                   <Link to="/register" className="text-primary font-medium hover:underline">
-                    CrÃ©er un compte
+                    Créer un compte
                   </Link>
                 </p>
               </div>
