@@ -719,20 +719,6 @@ function Sidebar({ onClose, pendingCount = 0 }: { onClose?: () => void; pendingC
           </a>
         )}
 
-        {/* CleanPilot — accès rapide (Pro+) */}
-        {(planId === 'pro' || planId === 'business' || isDemo) && (
-          <a
-            href="https://cleanpilot.staypilot.cc"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-muted hover:bg-border-light hover:text-dark transition-colors w-full"
-          >
-            <BrushIcon size={15} className="flex-shrink-0 text-orange-500" />
-            <span className="flex-1 truncate">CleanPilot</span>
-            <ExternalLink size={11} className="flex-shrink-0 opacity-40" />
-          </a>
-        )}
-
         <NavLink
           to="/parametres"
           onClick={onClose}
@@ -869,7 +855,7 @@ function Layout() {
 
         {/* Page content */}
         <main className="flex-1 overflow-y-auto overscroll-y-contain">
-          <div className="px-3 sm:px-6 py-4 sm:py-6 page-content">
+          <div key={location.key} className="px-3 sm:px-6 py-4 sm:py-6 page-content">
             <Outlet />
           </div>
         </main>
