@@ -6,9 +6,10 @@ import {
 import {
   LayoutDashboard, Calendar, TrendingUp, FileText,
   FolderOpen, User, LogOut, Menu, X, Bell, Home, Sun, Moon,
-  MessageSquare, BarChart2,
+  MessageSquare, BarChart2, FlaskConical,
 } from 'lucide-react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { DemoProvider, useDemo } from './contexts/DemoContext'
 import api from './lib/api'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -23,6 +24,7 @@ import Notifications from './pages/Notifications'
 import Messages from './pages/Messages'
 import Releves from './pages/Releves'
 import LogementDetail from './pages/LogementDetail'
+import Demo from './pages/Demo'
 
 const NAV_ITEMS = [
   { to: '/',               label: 'Mon tableau de bord', icon: LayoutDashboard, end: true },
@@ -56,12 +58,25 @@ function Sidebar({ onClose, unreadNotifs, unreadMessages }: {
   unreadMessages: number
 }) {
   const { logout, user } = useAuth()
+  const { isDemo, demoEmail, endDemo } = useDemo()
   const navigate = useNavigate()
+
+  const displayEmail = isDemo ? demoEmail : (user?.email ?? 'Propriétaire')
 
   const badgeFor = (to: string) => {
     if (to === '/notifications') return unreadNotifs
     if (to === '/messages') return unreadMessages
     return 0
+  }
+
+  const handleLogout = async () => {
+    if (isDemo) {
+      endDemo()
+      navigate('/login')
+      return
+    }
+    await logout()
+    navigate('/login')
   }
 
   return (
@@ -79,7 +94,7 @@ function Sidebar({ onClose, unreadNotifs, unreadMessages }: {
       {/* Owner label */}
       <div className="px-4 py-3 border-b border-border-light">
         <p className="text-[10px] text-muted uppercase tracking-wider font-medium mb-0.5">Espace propriétaire</p>
-        <p className="text-xs font-medium text-dark truncate">{user?.email ?? 'Propriétaire'}</p>
+        <p className="text-xs font-medium text-dark truncate">{displayEmail}</p>
       </div>
 
       {/* Nav */}
@@ -115,11 +130,11 @@ function Sidebar({ onClose, unreadNotifs, unreadMessages }: {
       {/* Logout */}
       <div className="px-2 py-4 border-t border-border flex-shrink-0">
         <button
-          onClick={async () => { await logout(); navigate('/login') }}
+          onClick={handleLogout}
           className="flex items-center gap-2.5 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-muted hover:text-dark hover:bg-border-light transition-colors"
         >
           <LogOut size={16} />
-          Déconnexion
+          {isDemo ? 'Quitter la démo' : 'Déconnexion'}
         </button>
       </div>
     </aside>
@@ -128,6 +143,7 @@ function Sidebar({ onClose, unreadNotifs, unreadMessages }: {
 
 function Layout() {
   const { user, loading } = useAuth()
+  const { isDemo, demoEmail, endDemo } = useDemo()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [dark, setDark] = useState(() => {
     const saved = localStorage.getItem('theme')
@@ -136,15 +152,16 @@ function Layout() {
   const [unreadNotifs, setUnreadNotifs] = useState(0)
   const [unreadMessages, setUnreadMessages] = useState(0)
   const location = useLocation()
+  const navigate = useNavigate()
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark)
     localStorage.setItem('theme', dark ? 'dark' : 'light')
   }, [dark])
 
-  // Poll unread counts every 60s
+  // Poll unread counts every 60s (fonctionne aussi en mode démo via le demoAdapter)
   useEffect(() => {
-    if (!user) return
+    if (!user && !isDemo) return
 
     const fetchCounts = () => {
       api.get<{ count: number }>('/api/notifications/count')
@@ -160,7 +177,7 @@ function Layout() {
     fetchCounts()
     const timer = setInterval(fetchCounts, 60_000)
     return () => clearInterval(timer)
-  }, [user])
+  }, [user, isDemo])
 
   // Reset badge when navigating to those pages
   useEffect(() => {
@@ -176,8 +193,11 @@ function Layout() {
     )
   }
 
-  if (!user) return <Navigate to="/login" replace />
+  // Rediriger vers /login seulement si pas connecté ET pas en mode démo
+  if (!user && !isDemo) return <Navigate to="/login" replace />
 
+  const displayEmail = isDemo ? demoEmail : (user?.email ?? '')
+  const displayInitial = displayEmail[0]?.toUpperCase() ?? 'P'
   const title = TITLE_MAP[location.pathname] ?? 'StayPilot'
   const totalBadge = unreadNotifs + unreadMessages
 
@@ -200,6 +220,24 @@ function Layout() {
 
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Bandeau démo */}
+        {isDemo && (
+          <div className="flex items-center justify-between px-4 sm:px-6 py-2 bg-amber-50 border-b border-amber-200 flex-shrink-0">
+            <div className="flex items-center gap-2 text-amber-700">
+              <FlaskConical size={14} className="flex-shrink-0" />
+              <span className="text-xs font-medium">
+                Mode démo — Données fictives · Propriétaire : Jean-Paul Mercier
+              </span>
+            </div>
+            <button
+              onClick={() => { endDemo(); navigate('/login') }}
+              className="text-xs font-medium text-amber-600 hover:text-amber-800 underline underline-offset-2 flex-shrink-0"
+            >
+              Quitter
+            </button>
+          </div>
+        )}
+
         {/* Header */}
         <header className="sticky top-0 z-40 flex items-center h-16 px-4 sm:px-6 bg-surface border-b border-border flex-shrink-0">
           <button onClick={() => setSidebarOpen(true)} className="mr-3 text-muted hover:text-dark lg:hidden">
@@ -223,11 +261,13 @@ function Layout() {
             </NavLink>
             <div className="flex items-center gap-2 pl-2 border-l border-border ml-1">
               <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                {user.email?.[0]?.toUpperCase() ?? 'P'}
+                {displayInitial}
               </div>
               <div className="hidden sm:flex flex-col leading-tight">
-                <span className="text-xs font-semibold text-dark truncate max-w-[120px]">{user.email}</span>
-                <span className="text-[10px] text-muted">Propriétaire</span>
+                <span className="text-xs font-semibold text-dark truncate max-w-[120px]">{displayEmail}</span>
+                <span className="text-[10px] text-muted">
+                  {isDemo ? '🔬 Démo' : 'Propriétaire'}
+                </span>
               </div>
             </div>
           </div>
@@ -246,6 +286,7 @@ function Layout() {
 
 function AppRoutes() {
   const { user, loading } = useAuth()
+  const { isDemo } = useDemo()
 
   if (loading) {
     return (
@@ -257,8 +298,14 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
-      <Route path="/register" element={user ? <Navigate to="/" replace /> : <Register />} />
+      {/* Route démo — accessible sans auth */}
+      <Route path="/demo" element={<Demo />} />
+
+      {/* Auth pages — redirige si déjà connecté ou en mode démo */}
+      <Route path="/login" element={(user || isDemo) ? <Navigate to="/" replace /> : <Login />} />
+      <Route path="/register" element={(user || isDemo) ? <Navigate to="/" replace /> : <Register />} />
+
+      {/* App — Layout gère lui-même le guard auth/démo */}
       <Route element={<Layout />}>
         <Route index element={<Dashboard />} />
         <Route path="/reservations" element={<Reservations />} />
@@ -281,7 +328,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AppRoutes />
+        <DemoProvider>
+          <AppRoutes />
+        </DemoProvider>
       </AuthProvider>
     </BrowserRouter>
   )

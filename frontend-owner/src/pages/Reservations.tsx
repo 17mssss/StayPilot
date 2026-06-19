@@ -8,6 +8,7 @@ interface Reservation {
   property_name?: string; logement_name?: string
   check_in: string; check_out: string; status: string
   guests_count?: number; total_price?: number; platform?: string
+  commission?: number
 }
 
 const STATUS_CONFIG: Record<string, { label: string; cls: string }> = {
@@ -23,7 +24,8 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 const MONTHS_FR = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
-const COMMISSION = 0.20
+// Commission portée par chaque réservation (r.commission), défaut 20 %
+const DEFAULT_COMMISSION = 0.20
 
 function fmt(d: string) { return new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) }
 function nights(ci: string, co: string) { return Math.round((new Date(co).getTime() - new Date(ci).getTime()) / 86400000) }
@@ -62,7 +64,7 @@ export default function Reservations() {
 
   const totalNet = filtered
     .filter((r) => r.status !== 'cancelled')
-    .reduce((s, r) => s + (r.total_price ?? 0) * (1 - COMMISSION), 0)
+    .reduce((s, r) => s + (r.total_price ?? 0) * (1 - (r.commission ?? DEFAULT_COMMISSION)), 0)
 
   return (
     <div>
@@ -150,7 +152,7 @@ export default function Reservations() {
                     <td className="px-4 py-3 text-center font-medium text-dark">{nights(r.check_in, r.check_out)}</td>
                     <td className="px-4 py-3 font-semibold text-primary">
                       {r.total_price && r.status !== 'cancelled'
-                        ? `${(r.total_price * (1 - COMMISSION)).toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €`
+                        ? `${(r.total_price * (1 - (r.commission ?? DEFAULT_COMMISSION))).toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €`
                         : '—'}
                     </td>
                     <td className="px-4 py-3"><StatusBadge status={r.status} /></td>

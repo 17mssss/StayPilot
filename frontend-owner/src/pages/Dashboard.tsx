@@ -9,6 +9,7 @@ import api from '../lib/api'
 interface Reservation {
   id: string; guest_name: string; property_name?: string; logement_name?: string
   check_in: string; check_out: string; status: string; total_price?: number
+  commission?: number
 }
 interface Invoice {
   id: string; invoice_number?: string; numero?: string
@@ -59,7 +60,9 @@ function StatusBadge({ status }: { status: string }) {
 
 const MONTHS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc']
 const DAYS_FR = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
-const COMMISSION = 0.20
+// La commission est portée par chaque réservation (r.commission).
+// Valeur par défaut 20 % si le champ est absent de la réponse API.
+const DEFAULT_COMMISSION = 0.20
 
 function fmt(d: string) {
   return new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
@@ -168,7 +171,7 @@ export default function Dashboard() {
   // KPIs
   const revenueThisMonth = reservations
     .filter((r) => { const d = new Date(r.check_in); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() && r.status !== 'cancelled' })
-    .reduce((s, r) => s + (r.total_price ?? 0) * (1 - COMMISSION), 0)
+    .reduce((s, r) => s + (r.total_price ?? 0) * (1 - (r.commission ?? DEFAULT_COMMISSION)), 0)
 
   const activeRes = reservations.filter((r) => r.status === 'confirmed').length
   const totalDays = reservations.filter((r) => r.status !== 'cancelled').reduce((s, r) => s + nights(r.check_in, r.check_out), 0)
@@ -180,7 +183,7 @@ export default function Dashboard() {
     const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1)
     const rev = reservations
       .filter((r) => { const rd = new Date(r.check_in); return rd.getMonth() === d.getMonth() && rd.getFullYear() === d.getFullYear() && r.status !== 'cancelled' })
-      .reduce((s, r) => s + (r.total_price ?? 0) * (1 - COMMISSION), 0)
+      .reduce((s, r) => s + (r.total_price ?? 0) * (1 - (r.commission ?? DEFAULT_COMMISSION)), 0)
     return { month: MONTHS[d.getMonth()], net: Math.round(rev) }
   })
 
@@ -277,7 +280,7 @@ export default function Dashboard() {
                       <td className="py-3 text-muted">{fmt(r.check_out)}</td>
                       <td className="py-3 text-center font-medium text-dark">{nights(r.check_in, r.check_out)}</td>
                       <td className="py-3 font-semibold text-primary">
-                        {r.total_price ? `${((r.total_price) * (1 - COMMISSION)).toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €` : '—'}
+                        {r.total_price ? `${((r.total_price) * (1 - (r.commission ?? DEFAULT_COMMISSION))).toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €` : '—'}
                       </td>
                     </tr>
                   ))}
@@ -302,7 +305,7 @@ export default function Dashboard() {
             </p>
           </div>
           <div className="flex justify-between text-xs text-muted mt-3 pt-3 border-t border-gray-50">
-            <span>Commission ({(COMMISSION * 100).toFixed(0)}%)</span>
+            <span>Commission (20%)</span>
             <span className="font-medium text-dark">déduite</span>
           </div>
         </div>
